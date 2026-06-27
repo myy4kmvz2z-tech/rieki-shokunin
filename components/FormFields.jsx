@@ -15,16 +15,18 @@ function parseIntegerValue(raw) {
   return Number.isNaN(n) ? 0 : n;
 }
 
-export function Input({ label, value, setValue, type = "text" }) {
+export function Input({ label, value, setValue, type = "text", large = false }) {
   const [focused, setFocused] = useState(false);
   const [draft, setDraft] = useState("");
+  const labelStyle = large ? s.estimateLabel : s.label;
+  const inputStyle = large ? s.estimateInput : s.input;
 
   if (type !== "number") {
     return (
-      <label style={s.label}>
+      <label style={labelStyle}>
         {label}
         <input
-          style={s.input}
+          style={inputStyle}
           type={type}
           value={value}
           onChange={(e) => setValue(e.target.value)}
@@ -37,10 +39,10 @@ export function Input({ label, value, setValue, type = "text" }) {
   const displayValue = focused ? draft : String(Number.isNaN(numericValue) ? 0 : numericValue);
 
   return (
-    <label style={s.label}>
+    <label style={labelStyle}>
       {label}
       <input
-        style={s.input}
+        style={inputStyle}
         type="text"
         inputMode="numeric"
         value={displayValue}
@@ -68,7 +70,7 @@ export function CardButtonGroup({ label, value, setValue, options }) {
   return (
     <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
       {label && (
-        <legend style={{ ...s.estimateFieldLabel, marginBottom: 10, padding: 0 }}>
+        <legend style={{ ...s.estimateFieldLabel, marginBottom: 12, padding: 0 }}>
           {label}
         </legend>
       )}
@@ -76,6 +78,7 @@ export function CardButtonGroup({ label, value, setValue, options }) {
         {options.map((option) => {
           const optionValue = typeof option === "string" ? option : option.value;
           const optionLabel = typeof option === "string" ? option : option.label;
+          const optionIcon = typeof option === "string" ? null : option.icon;
           const active = value === optionValue;
           return (
             <button
@@ -87,7 +90,8 @@ export function CardButtonGroup({ label, value, setValue, options }) {
               }}
               onClick={() => setValue(optionValue)}
             >
-              {optionLabel}
+              {optionIcon && <span style={s.cardButtonIcon}>{optionIcon}</span>}
+              <span>{optionLabel}</span>
             </button>
           );
         })}
@@ -125,11 +129,15 @@ export function RadioGroup({ label, value, setValue, options }) {
   );
 }
 
-export function Select({ label, value, setValue, options }) {
+export function Select({ label, value, setValue, options, large = false }) {
   return (
-    <label style={s.label}>
+    <label style={large ? s.estimateLabel : s.label}>
       {label}
-      <select style={s.input} value={value} onChange={(e) => setValue(e.target.value)}>
+      <select
+        style={large ? s.estimateInput : s.input}
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+      >
         {options.map((o) => {
           const optionValue = typeof o === "string" ? o : o.value;
           const optionLabel = typeof o === "string" ? o : o.label;
