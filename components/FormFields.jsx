@@ -64,6 +64,38 @@ export function Input({ label, value, setValue, type = "text" }) {
   );
 }
 
+export function CardButtonGroup({ label, value, setValue, options }) {
+  return (
+    <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
+      {label && (
+        <legend style={{ ...s.estimateFieldLabel, marginBottom: 10, padding: 0 }}>
+          {label}
+        </legend>
+      )}
+      <div style={s.cardButtonRow}>
+        {options.map((option) => {
+          const optionValue = typeof option === "string" ? option : option.value;
+          const optionLabel = typeof option === "string" ? option : option.label;
+          const active = value === optionValue;
+          return (
+            <button
+              key={optionValue}
+              type="button"
+              style={{
+                ...s.cardButton,
+                ...(active ? s.cardButtonActive : null),
+              }}
+              onClick={() => setValue(optionValue)}
+            >
+              {optionLabel}
+            </button>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 export function RadioGroup({ label, value, setValue, options }) {
   return (
     <fieldset style={{ border: "none", margin: 0, padding: 0 }}>

@@ -22,7 +22,7 @@ import {
 } from "../utils/calcTransport";
 import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
-import { Input, RadioGroup, Select } from "./FormFields";
+import { CardButtonGroup, Input, Select } from "./FormFields";
 
 const OUTSOURCING_MODE_OPTIONS = [
   { value: "labor", label: "常用（人工）" },
@@ -47,21 +47,50 @@ function Divider() {
   return <hr style={s.estimateDivider} />;
 }
 
-function ReadonlyMetric({ label, value, large = false }) {
+function ProfitDock({ sales, cost, profit, rateText, profitRateBand, judgmentText }) {
   return (
-    <div style={large ? s.estimateReadonlyLarge : s.estimateReadonly}>
-      <p style={s.estimateReadonlyLabel}>{label}</p>
-      <p style={large ? s.estimateReadonlyValueLarge : s.estimateReadonlyValue}>{value}</p>
-    </div>
-  );
-}
+    <section style={s.estimateProfitDock}>
+      <div style={s.estimateDockSubRow}>
+        <div style={s.estimateDockSubItem}>
+          <p style={s.estimateDockSubLabel}>見積金額</p>
+          <p style={s.estimateDockSubValue}>{sales}</p>
+        </div>
+        <div style={s.estimateDockSubItem}>
+          <p style={s.estimateDockSubLabel}>原価</p>
+          <p style={s.estimateDockSubValue}>{cost}</p>
+        </div>
+      </div>
 
-function HeroResultCard({ label, value, color, borderColor }) {
-  return (
-    <div style={{ ...s.estimateHeroCard, borderColor: borderColor || "#2a2a2a" }}>
-      <p style={s.estimateHeroLabel}>{label}</p>
-      <p style={{ ...s.estimateHeroValue, color: color || "#fff" }}>{value}</p>
-    </div>
+      <div style={s.estimateDockProfit}>
+        <p style={s.estimateDockProfitLabel}>利益</p>
+        <p style={s.estimateDockProfitValue}>{profit}</p>
+      </div>
+
+      <div style={s.estimateDockBottomRow}>
+        <div
+          style={{
+            ...s.estimateDockJudgeCard,
+            borderColor: profitRateBand.color,
+          }}
+        >
+          <p style={s.estimateDockJudgeLabel}>利益率</p>
+          <p style={{ ...s.estimateDockJudgeValue, color: profitRateBand.color }}>
+            {rateText}
+          </p>
+        </div>
+        <div
+          style={{
+            ...s.estimateDockJudgeCard,
+            borderColor: profitRateBand.color,
+          }}
+        >
+          <p style={s.estimateDockJudgeLabel}>判定</p>
+          <p style={{ ...s.estimateDockJudgeValue, color: profitRateBand.color }}>
+            {judgmentText}
+          </p>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -404,24 +433,27 @@ export default function EstimateForm({
       <Divider />
 
       <Section title="② 原価">
+        <div style={s.estimateCostHero}>
+          <p style={s.estimateCostHeroLabel}>原価単価</p>
+          <p style={s.estimateCostHeroValue}>{yen(totals.costUnitPrice)}/㎡</p>
+        </div>
         <Input label="材料費 円/㎡" value={material} setValue={setMaterial} type="number" />
         <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
         <Input label="下地処理費 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
         <Input label="副資材 円/㎡" value={auxiliary} setValue={setAuxiliary} type="number" />
         <Input label="廃材処分費 円/㎡" value={waste} setValue={setWaste} type="number" />
-        <ReadonlyMetric label="原価単価" value={`${yen(totals.costUnitPrice)}/㎡`} large />
       </Section>
 
       <Divider />
 
       <Section title="③ 外注">
-        <RadioGroup
+        <CardButtonGroup
           label="方式"
           value={outsourcingMode}
           setValue={setOutsourcingMode}
           options={OUTSOURCING_MODE_OPTIONS}
         />
-        {outsourcingMode === "labor" ? (
+        {outsourcingMode === "labor" && (
           <>
             <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
             <Input
@@ -431,7 +463,8 @@ export default function EstimateForm({
               type="number"
             />
           </>
-        ) : (
+        )}
+        {outsourcingMode === "sqm" && (
           <Input
             label="請負単価 円/㎡"
             value={outsourcingSqmUnitPrice}
@@ -440,44 +473,42 @@ export default function EstimateForm({
           />
         )}
         {showDirectLaborInput && (
-          <Input
-            label="外注費 円"
-            value={directLabor}
-            setValue={setDirectLabor}
-            type="number"
-          />
+          <Input label="外注費 円" value={directLabor} setValue={setDirectLabor} type="number" />
         )}
-        <ReadonlyMetric label="外注費" value={yen(totals.labor)} />
       </Section>
 
       <Divider />
 
       <Section title="④ 経費">
-        <RadioGroup
+        <CardButtonGroup
           label="交通費方式"
           value={transportFeeMethod}
           setValue={handleTransportFeeMethodChange}
           options={TRANSPORT_METHOD_OPTIONS}
         />
         {transportFeeMethod === "gps" && (
-          <SiteTransportSection
-            company={company}
-            siteAddress={siteAddress}
-            distanceKm={distanceKm}
-            currentLat={currentLat}
-            currentLng={currentLng}
-            currentLocationLabel={currentLocationLabel}
-            onLocationChange={({ lat, lng, label }) => {
-              setCurrentLat(lat);
-              setCurrentLng(lng);
-              setCurrentLocationLabel(label);
-            }}
-            onDistanceChange={setDistanceKm}
-          />
+          <>
+            <SiteTransportSection
+              company={company}
+              siteAddress={siteAddress}
+              distanceKm={distanceKm}
+              currentLat={currentLat}
+              currentLng={currentLng}
+              currentLocationLabel={currentLocationLabel}
+              onLocationChange={({ lat, lng, label }) => {
+                setCurrentLat(lat);
+                setCurrentLng(lng);
+                setCurrentLocationLabel(label);
+              }}
+              onDistanceChange={setDistanceKm}
+            />
+            <div style={s.estimateReadonlyLarge}>
+              <p style={s.estimateReadonlyLabel}>交通費</p>
+              <p style={s.estimateReadonlyValueLarge}>{yen(totals.transportCost)}</p>
+            </div>
+          </>
         )}
-        {transportFeeMethod === "gps" ? (
-          <ReadonlyMetric label="交通費" value={yen(totals.transportCost)} large />
-        ) : (
+        {transportFeeMethod === "manual" && (
           <Input label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
         )}
         <Input label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
@@ -500,15 +531,14 @@ export default function EstimateForm({
           setValue={setTargetProfitRate}
           type="number"
         />
-        <ReadonlyMetric
-          label="推奨販売単価"
-          value={
-            profitSimulator.canCalculate
+        <div style={s.estimateReadonlyLarge}>
+          <p style={s.estimateReadonlyLabel}>推奨販売単価</p>
+          <p style={s.estimateReadonlyValueLarge}>
+            {profitSimulator.canCalculate
               ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
-              : "—"
-          }
-          large
-        />
+              : "—"}
+          </p>
+        </div>
         <button
           type="button"
           style={s.estimateApplyBtn}
@@ -519,34 +549,14 @@ export default function EstimateForm({
         </button>
       </Section>
 
-      <Divider />
-
-      <Section title="⑥ 結果">
-        <div style={s.estimateResultSubGrid}>
-          <ReadonlyMetric label="売上" value={yen(totals.sales)} />
-          <ReadonlyMetric label="原価" value={yen(totals.cost)} />
-        </div>
-        <div style={s.estimateHeroGrid}>
-          <HeroResultCard
-            label="利益"
-            value={yen(totals.profit)}
-            color={totals.profit >= 0 ? "#fff" : "#ef4444"}
-            borderColor={totals.profit >= 0 ? "#ff8a00" : "#ef4444"}
-          />
-          <HeroResultCard
-            label="利益率"
-            value={rateText}
-            color={profitRateBand.color}
-            borderColor={profitRateBand.color}
-          />
-          <HeroResultCard
-            label="判定"
-            value={judgmentText}
-            color={profitRateBand.color}
-            borderColor={profitRateBand.color}
-          />
-        </div>
-      </Section>
+      <ProfitDock
+        sales={yen(totals.sales)}
+        cost={yen(totals.cost)}
+        profit={yen(totals.profit)}
+        rateText={rateText}
+        profitRateBand={profitRateBand}
+        judgmentText={judgmentText}
+      />
 
       <div style={s.estimateActions}>
         <button style={s.save} type="button" onClick={() => onSave(buildEstimate())}>
