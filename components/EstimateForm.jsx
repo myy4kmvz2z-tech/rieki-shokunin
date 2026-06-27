@@ -204,11 +204,12 @@ export default function EstimateForm({
   onInvoicePdf,
   onPdfBlocked,
   initialEstimate,
+  isCopy = false,
 }) {
-  const editing = !!initialEstimate;
+  const editing = !!initialEstimate && !isCopy;
   const defaultClient = clients[0]?.name || "";
   const defaultWorkType = initialEstimate?.workType ?? "クロス SP";
-  const skipClientSync = useRef(editing);
+  const skipClientSync = useRef(editing || isCopy);
 
   const initialCost = getInitialCostState(
     clients,
@@ -431,7 +432,9 @@ export default function EstimateForm({
   return (
     <main style={s.estimatePage}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
-      <h1 style={s.estimatePageTitle}>{editing ? "見積編集" : "見積作成"}</h1>
+      <h1 style={s.estimatePageTitle}>
+        {isCopy ? "見積コピー" : editing ? "見積編集" : "見積作成"}
+      </h1>
 
       <Section title="① 現場情報">
         <Input large label="現場名" value={siteName} setValue={setSiteName} />

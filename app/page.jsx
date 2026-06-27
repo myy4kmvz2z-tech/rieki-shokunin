@@ -21,6 +21,7 @@ import {
   withPaymentStatus,
 } from "../lib/payment";
 import { s } from "../lib/styles";
+import { prepareEstimateCopy } from "../utils/estimateCopy";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
 export default function Page() {
@@ -32,6 +33,7 @@ export default function Page() {
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [copySourceId, setCopySourceId] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
 
@@ -145,6 +147,45 @@ export default function Page() {
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
+  } else if (screen === "copy") {
+    const copySource = estimates.find((e) => e.id === copySourceId);
+    content = copySource ? (
+      <EstimateForm
+        clients={clients}
+        company={company}
+        plan={plan}
+        isCopy
+        initialEstimate={prepareEstimateCopy(copySource)}
+        onBack={() => {
+          setCopySourceId(null);
+          setScreen("list");
+        }}
+        onSave={(estimate) => {
+          if (!canSaveEstimate(plan, estimates.length)) {
+            setShowEstimateLimitModal(true);
+            return;
+          }
+          saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
+          setCopySourceId(null);
+        }}
+        onPdf={handlePdfOutput}
+        onInvoicePdf={handleInvoicePdfOutput}
+        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
+      />
+    ) : (
+      <main style={s.page}>
+        <button
+          style={s.back}
+          onClick={() => {
+            setCopySourceId(null);
+            setScreen("list");
+          }}
+        >
+          ← 戻る
+        </button>
+        <p style={s.muted}>見積が見つかりませんでした。</p>
+      </main>
+    );
   } else if (screen === "list") {
     content = (
       <EstimateList
@@ -155,6 +196,10 @@ export default function Page() {
         onEdit={(id) => {
           setEditingId(id);
           setScreen("edit");
+        }}
+        onCopy={(id) => {
+          setCopySourceId(id);
+          setScreen("copy");
         }}
         onPdf={handlePdfOutput}
         onAdvancePayment={handleAdvancePayment}

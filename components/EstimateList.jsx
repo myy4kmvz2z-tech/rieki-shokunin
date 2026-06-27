@@ -13,6 +13,7 @@ export default function EstimateList({
   clientCount,
   onBack,
   onEdit,
+  onCopy,
   onPdf,
   onAdvancePayment,
   onMarkPaid,
@@ -61,6 +62,9 @@ export default function EstimateList({
               />
 
               <div style={s.rowActions}>
+                <button style={s.copyBtn} onClick={() => onCopy(e.id)}>
+                  📋 コピー
+                </button>
                 <button style={s.editBtn} onClick={() => onEdit(e.id)}>
                   編集
                 </button>
