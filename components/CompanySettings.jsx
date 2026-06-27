@@ -13,7 +13,10 @@ export default function CompanySettings({ company, onBack, onSave }) {
     standardLaborUnitPrice: company.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE,
     monthlyTargetProfit: company.monthlyTargetProfit ?? DEFAULT_COMPANY.monthlyTargetProfit,
     dailyTargetProfit: company.dailyTargetProfit ?? DEFAULT_COMPANY.dailyTargetProfit,
-    transportKmRate: company.transportKmRate ?? DEFAULT_COMPANY.transportKmRate,
+    vehicleName: company.vehicleName ?? DEFAULT_COMPANY.vehicleName,
+    fuelEfficiencyKmPerL:
+      company.fuelEfficiencyKmPerL ?? DEFAULT_COMPANY.fuelEfficiencyKmPerL,
+    gasolinePricePerL: company.gasolinePricePerL ?? DEFAULT_COMPANY.gasolinePricePerL,
     transportRoundTripDefault:
       company.transportRoundTripDefault ?? DEFAULT_COMPANY.transportRoundTripDefault,
     googleMapsApiKey: company.googleMapsApiKey ?? "",
@@ -37,8 +40,13 @@ export default function CompanySettings({ company, onBack, onSave }) {
       standardLaborUnitPrice: Number(form.standardLaborUnitPrice || DEFAULT_LABOR_UNIT_PRICE),
       monthlyTargetProfit: Number(form.monthlyTargetProfit || 0),
       dailyTargetProfit: Number(form.dailyTargetProfit || 0),
-      transportKmRate: Number(form.transportKmRate || DEFAULT_COMPANY.transportKmRate),
+      vehicleName: form.vehicleName.trim() || DEFAULT_COMPANY.vehicleName,
+      fuelEfficiencyKmPerL: Number(
+        form.fuelEfficiencyKmPerL || DEFAULT_COMPANY.fuelEfficiencyKmPerL
+      ),
+      gasolinePricePerL: Number(form.gasolinePricePerL || DEFAULT_COMPANY.gasolinePricePerL),
       transportRoundTripDefault: Boolean(form.transportRoundTripDefault),
+      transportKmRate: Number(company.transportKmRate ?? DEFAULT_COMPANY.transportKmRate),
       googleMapsApiKey: form.googleMapsApiKey.trim(),
     });
     alert("保存しました。");
@@ -87,16 +95,27 @@ export default function CompanySettings({ company, onBack, onSave }) {
       </section>
 
       <section style={s.listCard}>
-        <h2 style={s.sectionTitle}>交通費設定</h2>
+        <h2 style={s.sectionTitle}>車両・交通費設定</h2>
         <div style={s.form}>
           <Input
-            label="1kmあたり単価 円/km"
-            value={form.transportKmRate}
-            setValue={(v) => setField("transportKmRate", v)}
+            label="車両名"
+            value={form.vehicleName}
+            setValue={(v) => setField("vehicleName", v)}
+          />
+          <Input
+            label="燃費 km/L"
+            value={form.fuelEfficiencyKmPerL}
+            setValue={(v) => setField("fuelEfficiencyKmPerL", v)}
+            type="number"
+          />
+          <Input
+            label="ガソリン単価 円/L"
+            value={form.gasolinePricePerL}
+            setValue={(v) => setField("gasolinePricePerL", v)}
             type="number"
           />
           <RadioGroup
-            label="片道 / 往復"
+            label="片道 / 往復 初期設定"
             value={form.transportRoundTripDefault ? "roundTrip" : "oneWay"}
             setValue={(v) => setField("transportRoundTripDefault", v === "roundTrip")}
             options={TRIP_TYPES}
@@ -109,8 +128,6 @@ export default function CompanySettings({ company, onBack, onSave }) {
         <p style={s.hint}>
           GPS自動距離取得用。Ver.1 では保存のみで通信は行いません。
         </p>
-        {/* TODO: Google Maps Distance Matrix API 通信 */}
-        {/* TODO: GPS自動取得・現在地自動取得 */}
         <div style={s.form}>
           <Input
             label="Google Maps APIキー"

@@ -307,6 +307,8 @@ export function resolveEstimateFinancials(estimate, standardLaborUnitPrice) {
     kmRate: transport.kmRate,
     tripType: transport.tripType,
     fixedTransport: transport.fixedTransport,
+    fuelEfficiencyKmPerL: transport.fuelEfficiencyKmPerL,
+    gasolinePricePerL: transport.gasolinePricePerL,
     highwayToll: transport.highwayToll,
     parkingFee: transport.parkingFee,
   });
@@ -484,6 +486,8 @@ export function calcEstimateTotals({
   tripType,
   fixedTransport,
   transportFeeMethod,
+  fuelEfficiencyKmPerL,
+  gasolinePricePerL,
   highwayToll,
   parkingFee,
 }) {
@@ -522,6 +526,8 @@ export function calcEstimateTotals({
     kmRate,
     tripType,
     fixedTransport,
+    fuelEfficiencyKmPerL,
+    gasolinePricePerL,
   });
   const highway = Number(highwayToll || 0);
   const parking = Number(parkingFee || 0);

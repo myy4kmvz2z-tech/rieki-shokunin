@@ -16,7 +16,11 @@ import {
 } from "../utils/calcProfit";
 import { hasPdfFeatures } from "../lib/plan";
 import {
+  formatTransportFuelSummary,
+  getDefaultFuelEfficiency,
+  getDefaultGasolinePrice,
   getDefaultTripType,
+  getDefaultVehicleName,
   getInitialTransportState,
   TRANSPORT_MODE_FIXED,
   TRANSPORT_MODE_GPS,
@@ -35,6 +39,32 @@ const TRANSPORT_METHOD_OPTIONS = [
   { value: "gps", label: "GPS自動", icon: "🚗" },
   { value: "manual", label: "手入力", icon: "⌨️" },
 ];
+
+const TRIP_TYPE_OPTIONS = [
+  { value: "oneWay", label: "片道" },
+  { value: "roundTrip", label: "往復" },
+];
+
+function TransportFuelSummary({ company, distanceKm, tripType, fuelEfficiencyKmPerL, gasolinePricePerL, transportCost }) {
+  const summary = formatTransportFuelSummary({
+    vehicleName: getDefaultVehicleName(company),
+    fuelEfficiencyKmPerL,
+    gasolinePricePerL,
+    distanceKm,
+    tripType,
+    transportCost,
+  });
+
+  return (
+    <div style={s.transportCalcBox}>
+      <p style={s.transportSummaryLine}>{summary.vehicleLine}</p>
+      <p style={s.transportSummaryLine}>{summary.fuelLine}</p>
+      <p style={s.transportSummaryLine}>{summary.gasLine}</p>
+      <p style={s.transportSummaryLine}>{summary.distanceLine}</p>
+      <p style={{ ...s.transportSummaryLine, ...s.transportSummaryCost }}>{summary.costLine}</p>
+    </div>
+  );
+}
 
 function Section({ title, children }) {
   return (
@@ -258,6 +288,10 @@ export default function EstimateForm({
   const [distanceKm, setDistanceKm] = useState(initialTransport.distanceKm);
   const [tripType, setTripType] = useState(initialTransport.tripType);
   const [kmRate, setKmRate] = useState(initialTransport.kmRate);
+  const [fuelEfficiencyKmPerL, setFuelEfficiencyKmPerL] = useState(
+    initialTransport.fuelEfficiencyKmPerL
+  );
+  const [gasolinePricePerL, setGasolinePricePerL] = useState(initialTransport.gasolinePricePerL);
   const [fixedTransport, setFixedTransport] = useState(initialTransport.fixedTransport);
   const [highwayToll, setHighwayToll] = useState(initialTransport.highwayToll ?? 0);
   const [parkingFee, setParkingFee] = useState(initialTransport.parkingFee);
@@ -271,19 +305,16 @@ export default function EstimateForm({
     setTransportFeeMethod(method);
     if (method === "gps") {
       setTransportMode(TRANSPORT_MODE_GPS);
-      setKmRate(Number(company?.transportKmRate ?? 40));
       setTripType(getDefaultTripType(company));
+      setFuelEfficiencyKmPerL(getDefaultFuelEfficiency(company));
+      setGasolinePricePerL(getDefaultGasolinePrice(company));
       return;
     }
     setTransportMode(TRANSPORT_MODE_FIXED);
   };
 
-  const gpsKmRate = Number(company?.transportKmRate ?? 40);
-  const gpsTripType = getDefaultTripType(company);
   const activeTransportMode =
     transportFeeMethod === "gps" ? TRANSPORT_MODE_GPS : TRANSPORT_MODE_FIXED;
-  const activeKmRate = transportFeeMethod === "gps" ? gpsKmRate : kmRate;
-  const activeTripType = transportFeeMethod === "gps" ? gpsTripType : tripType;
 
   useEffect(() => {
     if (!clients.some((c) => c.name === client) && clients[0]) {
@@ -328,9 +359,11 @@ export default function EstimateForm({
     transportMode: activeTransportMode,
     transportFeeMethod,
     distanceKm,
-    kmRate: activeKmRate,
-    tripType: activeTripType,
+    kmRate,
+    tripType,
     fixedTransport,
+    fuelEfficiencyKmPerL,
+    gasolinePricePerL,
     highwayToll,
     parkingFee,
   });
@@ -379,8 +412,11 @@ export default function EstimateForm({
     transportFeeMethod,
     transportMode: activeTransportMode,
     distanceKm,
-    tripType: activeTripType,
-    kmRate: activeKmRate,
+    tripType,
+    kmRate,
+    fuelEfficiencyKmPerL,
+    gasolinePricePerL,
+    vehicleName: getDefaultVehicleName(company),
     fixedTransport,
     highwayToll,
     parkingFee,
@@ -519,10 +555,34 @@ export default function EstimateForm({
               }}
               onDistanceChange={setDistanceKm}
             />
-            <div style={s.estimateReadonlyLarge}>
-              <p style={s.estimateReadonlyLabel}>交通費</p>
-              <p style={s.estimateReadonlyValueLarge}>{yen(totals.transportCost)}</p>
-            </div>
+            <CardButtonGroup
+              label="片道 / 往復"
+              value={tripType}
+              setValue={setTripType}
+              options={TRIP_TYPE_OPTIONS}
+            />
+            <Input
+              large
+              label="燃費 km/L"
+              value={fuelEfficiencyKmPerL}
+              setValue={setFuelEfficiencyKmPerL}
+              type="number"
+            />
+            <Input
+              large
+              label="ガソリン単価 円/L"
+              value={gasolinePricePerL}
+              setValue={setGasolinePricePerL}
+              type="number"
+            />
+            <TransportFuelSummary
+              company={company}
+              distanceKm={distanceKm}
+              tripType={tripType}
+              fuelEfficiencyKmPerL={fuelEfficiencyKmPerL}
+              gasolinePricePerL={gasolinePricePerL}
+              transportCost={totals.transportCost}
+            />
           </>
         )}
         {transportFeeMethod === "manual" && (
