@@ -7,6 +7,7 @@ import ConfirmModal from "../components/ConfirmModal";
 import Dashboard from "../components/Dashboard";
 import EstimateForm from "../components/EstimateForm";
 import EstimateList from "../components/EstimateList";
+import PricingPlan from "../components/PricingPlan";
 import PdfEstimate from "../components/PdfEstimate";
 import PdfInvoice from "../components/PdfInvoice";
 import { useClients } from "../hooks/useClients";
@@ -163,6 +164,14 @@ export default function Page() {
         onSave={saveCompany}
       />
     );
+  } else if (screen === "pricing") {
+    content = (
+      <PricingPlan
+        clients={clients}
+        estimates={estimates}
+        onBack={() => setScreen("home")}
+      />
+    );
   } else {
     content = (
       <main style={s.page}>
@@ -180,6 +189,9 @@ export default function Page() {
           </button>
           <button style={s.btn} onClick={() => setScreen("settings")}>
             会社設定
+          </button>
+          <button style={s.btn} onClick={() => setScreen("pricing")}>
+            料金プラン
           </button>
         </nav>
       </main>
