@@ -31,6 +31,7 @@ export default function Dashboard({
   plan,
   company,
   onNewEstimate,
+  onTemplates,
   onList,
   onClients,
   onSettings,
@@ -116,6 +117,9 @@ export default function Dashboard({
       <nav style={s.ceoNav}>
         <button style={s.btnPrimary} type="button" onClick={onNewEstimate}>
           ＋ 見積作成
+        </button>
+        <button style={s.btn} type="button" onClick={onTemplates}>
+          テンプレートから見積
         </button>
         <button style={s.btn} type="button" onClick={onList}>
           保存済み見積
