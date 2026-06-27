@@ -4,6 +4,7 @@ import {
   resolveEstimateFinancials,
   yen,
 } from "./calcProfit";
+import { formatCompactYen } from "./ceoDashboard";
 
 function parseEstimateDate(createdAt) {
   if (!createdAt) return null;
@@ -119,36 +120,25 @@ export function getAiProfitDiagnosis({
 export function buildCeoComments(estimates, options = {}) {
   const comments = [];
   const now = new Date();
-  const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const monthlyTargetProfit = Number(options.monthlyTargetProfit || 0);
   const monthProfit = Number(options.monthProfit || 0);
 
   const clientRates = {};
-  const workTypeRates = {};
   let computedMonthProfit = 0;
-  let lastMonthProfit = 0;
-  let monthRateSum = 0;
-  let monthRateCount = 0;
-  let monthEstimateCount = 0;
   let monthDiscountTotal = 0;
   let lowRateCandidate = null;
 
   estimates.forEach((estimate) => {
     const date = parseEstimateDate(estimate.createdAt);
+    const isThisMonth = !date || isSameMonth(date, now);
     const financials = resolveEstimateFinancials(estimate);
-    const { profit, sales, rate, effectiveSellingUnitPrice, cost } = financials;
+    const { profit, rate, effectiveSellingUnitPrice, cost } = financials;
     const disc = Number(estimate.discount || 0);
     const targetRate = Number(estimate.targetProfitRate ?? PROFIT_RATE_GOOD_THRESHOLD);
 
-    if (date && isSameMonth(date, now)) {
+    if (isThisMonth) {
       computedMonthProfit += profit;
-      monthEstimateCount += 1;
       monthDiscountTotal += disc;
-
-      if (sales > 0) {
-        monthRateSum += rate;
-        monthRateCount += 1;
-      }
 
       if (estimate.client) {
         if (!clientRates[estimate.client]) {
@@ -156,14 +146,6 @@ export function buildCeoComments(estimates, options = {}) {
         }
         clientRates[estimate.client].sum += rate;
         clientRates[estimate.client].count += 1;
-      }
-
-      if (estimate.workType) {
-        if (!workTypeRates[estimate.workType]) {
-          workTypeRates[estimate.workType] = { sum: 0, count: 0 };
-        }
-        workTypeRates[estimate.workType].sum += rate;
-        workTypeRates[estimate.workType].count += 1;
       }
 
       if (rate < targetRate && Number(estimate.area || 0) > 0) {
@@ -181,27 +163,18 @@ export function buildCeoComments(estimates, options = {}) {
           lowRateCandidate = {
             increase,
             targetRate,
-            workType: estimate.workType || "工事",
           };
         }
       }
-    }
-
-    if (date && isSameMonth(date, lastMonth)) {
-      lastMonthProfit += profit;
     }
   });
 
   const effectiveMonthProfit = monthProfit || computedMonthProfit;
 
-  if (monthlyTargetProfit > effectiveMonthProfit && monthEstimateCount > 0) {
+  if (monthlyTargetProfit > effectiveMonthProfit) {
     const remaining = monthlyTargetProfit - effectiveMonthProfit;
-    const avgProfit = effectiveMonthProfit / monthEstimateCount;
-    if (avgProfit > 0) {
-      const ordersNeeded = Math.ceil(remaining / avgProfit);
-      if (ordersNeeded > 0) {
-        comments.push(`あと${ordersNeeded}件受注すると目標達成です。`);
-      }
+    if (remaining > 0) {
+      comments.push(`あと${formatCompactYen(remaining)}で目標達成です。`);
     }
   }
 
@@ -217,38 +190,14 @@ export function buildCeoComments(estimates, options = {}) {
     comments.push(`今月は${topClient.name}の利益率が一番高いです。`);
   }
 
-  const overallAvg = monthRateCount > 0 ? monthRateSum / monthRateCount : 0;
-  const topWorkType = Object.entries(workTypeRates)
-    .map(([name, data]) => {
-      const avg = data.count > 0 ? data.sum / data.count : 0;
-      return { name, avg, diff: avg - overallAvg };
-    })
-    .filter((item) => item.diff >= 1)
-    .sort((a, b) => b.diff - a.diff)[0];
-
-  if (topWorkType) {
-    const shortName = topWorkType.name.replace(/^クロス /, "");
-    comments.push(
-      `${shortName}の利益率が平均より${Math.round(topWorkType.diff)}%高いです。`
-    );
-  }
-
   if (monthDiscountTotal > 0) {
-    comments.push("値引きが利益を圧迫しています。");
+    comments.push("値引きが利益率を下げています。");
   }
 
   if (lowRateCandidate) {
     comments.push(
       `販売単価を${lowRateCandidate.increase.toLocaleString()}円/㎡上げると利益率${lowRateCandidate.targetRate}%になります。`
     );
-  }
-
-  if (lastMonthProfit > 0) {
-    const change = ((effectiveMonthProfit - lastMonthProfit) / lastMonthProfit) * 100;
-    if (Math.abs(change) >= 1) {
-      const direction = change >= 0 ? "増え" : "減り";
-      comments.push(`今月利益は先月より${Math.abs(Math.round(change))}%${direction}ています。`);
-    }
   }
 
   if (comments.length === 0) {
