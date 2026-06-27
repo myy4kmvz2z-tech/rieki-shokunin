@@ -15,7 +15,7 @@ export default function CeoCommentCard({ estimates, plan, dashboard }) {
 
   return (
     <section style={{ ...s.ceoDashSection, marginTop: 8 }}>
-      <p style={s.ceoDashSectionTitle}>AI社長コメント</p>
+      <p style={s.ceoDashSectionTitle}>🤖 AI社長コメント</p>
       {pro ? (
         <ul style={s.ceoCommentList}>
           {comments.map((comment) => (

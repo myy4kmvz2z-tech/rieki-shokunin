@@ -126,19 +126,22 @@ export function buildCeoComments(estimates, options = {}) {
   const clientRates = {};
   let computedMonthProfit = 0;
   let monthDiscountTotal = 0;
-  let lowRateCandidate = null;
+  let lowRateEstimateCount = 0;
 
   estimates.forEach((estimate) => {
     const date = parseEstimateDate(estimate.createdAt);
     const isThisMonth = !date || isSameMonth(date, now);
     const financials = resolveEstimateFinancials(estimate);
-    const { profit, rate, effectiveSellingUnitPrice, cost } = financials;
+    const { profit, sales, rate } = financials;
     const disc = Number(estimate.discount || 0);
-    const targetRate = Number(estimate.targetProfitRate ?? PROFIT_RATE_GOOD_THRESHOLD);
 
     if (isThisMonth) {
       computedMonthProfit += profit;
       monthDiscountTotal += disc;
+
+      if (sales > 0 && rate < PROFIT_RATE_GOOD_THRESHOLD) {
+        lowRateEstimateCount += 1;
+      }
 
       if (estimate.client) {
         if (!clientRates[estimate.client]) {
@@ -146,25 +149,6 @@ export function buildCeoComments(estimates, options = {}) {
         }
         clientRates[estimate.client].sum += rate;
         clientRates[estimate.client].count += 1;
-      }
-
-      if (rate < targetRate && Number(estimate.area || 0) > 0) {
-        const recommendedUnitPrice = calcTargetUnitPrice({
-          totalCost: cost,
-          area: estimate.area,
-          discount: disc,
-          targetRate,
-        });
-        const increase = Math.max(0, recommendedUnitPrice - Number(effectiveSellingUnitPrice || 0));
-        if (
-          increase > 0 &&
-          (!lowRateCandidate || increase > lowRateCandidate.increase)
-        ) {
-          lowRateCandidate = {
-            increase,
-            targetRate,
-          };
-        }
       }
     }
   });
@@ -190,14 +174,14 @@ export function buildCeoComments(estimates, options = {}) {
     comments.push(`今月は${topClient.name}の利益率が一番高いです。`);
   }
 
-  if (monthDiscountTotal > 0) {
-    comments.push("値引きが利益率を下げています。");
+  if (lowRateEstimateCount > 0) {
+    comments.push(
+      `利益率が${PROFIT_RATE_GOOD_THRESHOLD}%を下回る見積が${lowRateEstimateCount}件あります。`
+    );
   }
 
-  if (lowRateCandidate) {
-    comments.push(
-      `販売単価を${lowRateCandidate.increase.toLocaleString()}円/㎡上げると利益率${lowRateCandidate.targetRate}%になります。`
-    );
+  if (monthDiscountTotal > 0) {
+    comments.push("値引きが利益率を下げています。");
   }
 
   if (comments.length === 0) {

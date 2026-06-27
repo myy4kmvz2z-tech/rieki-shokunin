@@ -2,8 +2,13 @@
 
 import { buildCeoDashboard } from "../utils/ceoDashboard";
 import { yen } from "../utils/calcProfit";
+import { getPlanShortLabel } from "../lib/plan";
 import CeoCommentCard from "./CeoCommentCard";
 import { s } from "../lib/styles";
+
+function SectionDivider() {
+  return <hr style={s.homeDivider} />;
+}
 
 function HomeMetric({ label, value, hero = false, accent = false }) {
   return (
@@ -37,7 +42,15 @@ export default function Dashboard({
 
   return (
     <>
-      <p style={s.homeTitle}>利益職人 ホーム</p>
+      <header style={s.dashHeader}>
+        <p style={s.dashBrand}>利益職人</p>
+        <p style={s.dashPlanRow}>
+          <span style={s.dashPlanLabel}>現在プラン</span>
+          <span style={s.dashPlanName}>{getPlanShortLabel(plan)}</span>
+        </p>
+      </header>
+
+      <SectionDivider />
 
       <HomeMetric label="今月利益" value={yen(dashboard.monthProfit)} hero />
 
@@ -50,31 +63,45 @@ export default function Dashboard({
         />
         <HomeMetric label="利益率" value={`${dashboard.profitRate.toFixed(1)}%`} />
         <HomeMetric label="今月売上" value={yen(dashboard.monthSales)} />
+      </div>
+
+      <SectionDivider />
+
+      <div style={s.homeMetricStack}>
         <HomeMetric label="未請求金額" value={yen(dashboard.unbilledAmount)} />
         <HomeMetric label="入金待ち金額" value={yen(dashboard.pendingPaymentAmount)} />
       </div>
 
+      <SectionDivider />
+
       <CeoCommentCard estimates={estimates} plan={plan} dashboard={dashboard} />
 
+      <SectionDivider />
+
       <section style={s.homeSection}>
-        <p style={s.homeSectionTitle}>元請利益ランキング</p>
+        <p style={s.homeSectionTitle}>🏆 元請利益ランキング</p>
         {dashboard.clientRanking.length === 0 ? (
           <p style={s.ceoEmptyText}>ランキングデータがありません</p>
         ) : (
           <ol style={s.homeRankList}>
             {dashboard.clientRanking.map((item) => (
               <li key={item.name} style={s.homeRankItem}>
-                <span style={s.homeRankPlace}>{item.rankLabel}</span>
-                <span style={s.homeRankName}>{item.name}</span>
+                <div style={s.homeRankMain}>
+                  <span style={s.homeRankPlace}>{item.rankLabel}</span>
+                  <span style={s.homeRankName}>{item.name}</span>
+                </div>
+                <p style={s.homeRankRate}>利益率 {item.profitRateLabel}</p>
               </li>
             ))}
           </ol>
         )}
       </section>
 
+      <SectionDivider />
+
       <nav style={s.ceoNav}>
         <button style={s.btnPrimary} type="button" onClick={onNewEstimate}>
-          ＋見積作成
+          ＋ 見積作成
         </button>
         <button style={s.btn} type="button" onClick={onList}>
           保存済み見積

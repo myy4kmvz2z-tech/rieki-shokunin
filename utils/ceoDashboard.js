@@ -24,12 +24,16 @@ function getPaymentStatus(estimate) {
 
 function accumulateEstimate(
   estimate,
-  { clientProfit, unbilledAmount, pendingPaymentAmount, includeBilling }
+  { clientRates, unbilledAmount, pendingPaymentAmount, includeBilling, includeRates }
 ) {
-  const { profit, sales } = resolveEstimateFinancials(estimate);
+  const { profit, sales, rate } = resolveEstimateFinancials(estimate);
 
-  if (estimate.client) {
-    clientProfit[estimate.client] = (clientProfit[estimate.client] || 0) + profit;
+  if (includeRates && estimate.client) {
+    if (!clientRates[estimate.client]) {
+      clientRates[estimate.client] = { sum: 0, count: 0 };
+    }
+    clientRates[estimate.client].sum += rate;
+    clientRates[estimate.client].count += 1;
   }
 
   if (includeBilling) {
@@ -41,7 +45,23 @@ function accumulateEstimate(
     }
   }
 
-  return { profit, sales };
+  return { profit, sales, rate };
+}
+
+function buildClientRanking(clientRates) {
+  return Object.entries(clientRates)
+    .map(([name, data]) => ({
+      name,
+      profitRate: data.count > 0 ? data.sum / data.count : 0,
+    }))
+    .filter((item) => item.profitRate > 0)
+    .sort((a, b) => b.profitRate - a.profitRate)
+    .slice(0, 3)
+    .map((item, index) => ({
+      ...item,
+      rankLabel: CIRCLED_NUMBERS[index] || `${index + 1}.`,
+      profitRateLabel: `${Math.round(item.profitRate)}%`,
+    }));
 }
 
 export function formatCompactYen(amount) {
@@ -64,8 +84,8 @@ export function buildCeoDashboard(estimates, targets = {}) {
 
   let monthProfit = 0;
   let monthSales = 0;
-  const monthClientProfit = {};
-  const allClientProfit = {};
+  const monthClientRates = {};
+  const allClientRates = {};
   const unbilledAmount = { value: 0 };
   const pendingPaymentAmount = { value: 0 };
 
@@ -73,25 +93,24 @@ export function buildCeoDashboard(estimates, targets = {}) {
     const date = parseEstimateDate(estimate.createdAt);
     const isThisMonth = !date || isSameMonth(date, now);
 
-    const monthResult = isThisMonth
-      ? accumulateEstimate(estimate, {
-          clientProfit: monthClientProfit,
-          unbilledAmount,
-          pendingPaymentAmount,
-          includeBilling: true,
-        })
-      : null;
-
-    if (isThisMonth && monthResult) {
-      monthProfit += monthResult.profit;
-      monthSales += monthResult.sales;
+    if (isThisMonth) {
+      const result = accumulateEstimate(estimate, {
+        clientRates: monthClientRates,
+        unbilledAmount,
+        pendingPaymentAmount,
+        includeBilling: true,
+        includeRates: true,
+      });
+      monthProfit += result.profit;
+      monthSales += result.sales;
     }
 
     accumulateEstimate(estimate, {
-      clientProfit: allClientProfit,
+      clientRates: allClientRates,
       unbilledAmount: { value: 0 },
       pendingPaymentAmount: { value: 0 },
       includeBilling: false,
+      includeRates: true,
     });
   });
 
@@ -99,16 +118,7 @@ export function buildCeoDashboard(estimates, targets = {}) {
   const monthlyRemaining = Math.max(0, monthlyTargetProfit - monthProfit);
 
   const rankingSource =
-    Object.keys(monthClientProfit).length > 0 ? monthClientProfit : allClientProfit;
-
-  const clientRanking = Object.entries(rankingSource)
-    .map(([name, profit]) => ({ name, profit }))
-    .sort((a, b) => b.profit - a.profit)
-    .slice(0, 3)
-    .map((item, index) => ({
-      ...item,
-      rankLabel: CIRCLED_NUMBERS[index] || `${index + 1}.`,
-    }));
+    Object.keys(monthClientRates).length > 0 ? monthClientRates : allClientRates;
 
   return {
     monthProfit,
@@ -119,6 +129,6 @@ export function buildCeoDashboard(estimates, targets = {}) {
     monthlyRemainingLabel: formatCompactYen(monthlyRemaining),
     unbilledAmount: unbilledAmount.value,
     pendingPaymentAmount: pendingPaymentAmount.value,
-    clientRanking,
+    clientRanking: buildClientRanking(rankingSource),
   };
 }
