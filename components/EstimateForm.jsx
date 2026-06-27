@@ -14,7 +14,7 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
+import { hasPdfFeatures, hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
 import AiProfitDiagnosis from "./AiProfitDiagnosis";
 import {
   getInitialTransportState,
