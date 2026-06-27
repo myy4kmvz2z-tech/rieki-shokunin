@@ -1,7 +1,88 @@
 "use client";
 
 import { useState } from "react";
+import { normalizeLaborCount } from "../utils/calcProfit";
 import { s } from "../lib/styles";
+
+function sanitizeLaborCountDraft(raw) {
+  const cleaned = raw.replace(/[^\d.]/g, "");
+  const parts = cleaned.split(".");
+  if (parts.length <= 1) return cleaned;
+  return `${parts[0]}.${parts.slice(1).join("").slice(0, 1)}`;
+}
+
+function parseLaborCountDraft(raw) {
+  if (raw === "" || raw === ".") return 0;
+  const n = Number(raw);
+  return Number.isNaN(n) ? 0 : normalizeLaborCount(n);
+}
+
+export function LaborCountStepper({ label = "人工数", value, setValue, large = false }) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const normalized = normalizeLaborCount(value);
+  const labelStyle = large ? s.estimateLabel : s.label;
+
+  const applyValue = (next) => {
+    setValue(normalizeLaborCount(next));
+  };
+
+  const step = (delta) => {
+    applyValue(Math.max(0, normalized + delta));
+  };
+
+  const displayValue = focused
+    ? draft
+    : normalized === 0
+      ? "0.0"
+      : normalized.toFixed(1);
+
+  return (
+    <div style={labelStyle}>
+      <span>{label}</span>
+      <div style={s.laborStepperRow}>
+        <button
+          type="button"
+          style={s.laborStepperBtn}
+          aria-label="人工数を0.5減らす"
+          onClick={() => step(-0.5)}
+        >
+          −
+        </button>
+        <div style={s.laborStepperValueWrap}>
+          <input
+            style={s.laborStepperInput}
+            type="text"
+            inputMode="decimal"
+            value={displayValue}
+            onFocus={() => {
+              setFocused(true);
+              setDraft(normalized === 0 ? "" : normalized.toFixed(1));
+            }}
+            onChange={(e) => {
+              const nextDraft = sanitizeLaborCountDraft(e.target.value);
+              setDraft(nextDraft);
+              applyValue(parseLaborCountDraft(nextDraft));
+            }}
+            onBlur={() => {
+              setFocused(false);
+              applyValue(parseLaborCountDraft(draft));
+            }}
+          />
+          <span style={s.laborStepperSuffix}>人工</span>
+        </div>
+        <button
+          type="button"
+          style={s.laborStepperBtn}
+          aria-label="人工数を0.5増やす"
+          onClick={() => step(0.5)}
+        >
+          ＋
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function sanitizeIntegerDraft(raw) {
   const digits = raw.replace(/\D/g, "");

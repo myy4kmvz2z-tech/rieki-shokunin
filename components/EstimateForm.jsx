@@ -11,6 +11,7 @@ import {
   calcEstimateTotals,
   calcProfitSimulator,
   getCostStructureForClient,
+  normalizeLaborCount,
   yen,
 } from "../utils/calcProfit";
 import { hasPdfFeatures } from "../lib/plan";
@@ -23,7 +24,7 @@ import {
 import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
-import { CardButtonGroup, Collapsible, Input, Select } from "./FormFields";
+import { CardButtonGroup, Collapsible, Input, LaborCountStepper, Select } from "./FormFields";
 
 const OUTSOURCING_MODE_OPTIONS = [
   { value: "labor", label: "常用（人工）", icon: "👷" },
@@ -109,7 +110,7 @@ function getInitialOutsourcingState(initialEstimate, fromClient, company) {
       : fromClient?.standardOutsourcingMode === "sqm"
         ? "sqm"
         : "labor";
-  const laborCount = Number(initialEstimate?.laborCount ?? 0);
+  const laborCount = normalizeLaborCount(initialEstimate?.laborCount ?? 0);
   const laborUnitPrice = Number(
     initialEstimate?.laborUnitPrice ?? fromClient?.standardLaborUnitPrice ?? standardLaborUnitPrice
   );
@@ -470,7 +471,7 @@ export default function EstimateForm({
         />
         {outsourcingMode === "labor" && (
           <>
-            <Input large label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
+            <LaborCountStepper value={laborCount} setValue={setLaborCount} large />
             <Input
               large
               label="常用単価 円/人工"

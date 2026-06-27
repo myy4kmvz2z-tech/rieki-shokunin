@@ -8,6 +8,18 @@ import {
 
 export const yen = (n) => `¥${Number(n || 0).toLocaleString()}`;
 
+export const LABOR_COUNT_STEP = 0.5;
+
+export function normalizeLaborCount(value) {
+  const n = Number(value || 0);
+  if (Number.isNaN(n) || n <= 0) return 0;
+  return Math.round(n / LABOR_COUNT_STEP) * LABOR_COUNT_STEP;
+}
+
+export function formatLaborCountLabel(count) {
+  return `${normalizeLaborCount(count).toFixed(1)}人工`;
+}
+
 export { DEFAULT_LABOR_UNIT_PRICE, DEFAULT_TARGET_PROFIT_RATE };
 export const PROFIT_RATE_GOOD_THRESHOLD = 20;
 export const PROFIT_RATE_WARNING_THRESHOLD = 10;
@@ -130,7 +142,7 @@ export function calcOutsourcingCost({
     return Number(labor || 0);
   }
 
-  const count = Number(laborCount || 0);
+  const count = normalizeLaborCount(laborCount);
   if (count > 0) {
     return count * Number(laborUnitPrice || 0);
   }
@@ -146,7 +158,7 @@ export function normalizeEstimateOutsourcing(
   standardLaborUnitPrice = DEFAULT_LABOR_UNIT_PRICE
 ) {
   const outsourcingMode = estimate?.outsourcingMode === "sqm" ? "sqm" : "labor";
-  const laborCount = Number(estimate?.laborCount ?? 0);
+  const laborCount = normalizeLaborCount(estimate?.laborCount ?? 0);
   const laborUnitPrice = Number(estimate?.laborUnitPrice ?? standardLaborUnitPrice);
   const outsourcingSqmUnitPrice = Number(estimate?.outsourcingSqmUnitPrice ?? 0);
   const labor = calcOutsourcingCost({
@@ -199,15 +211,15 @@ export function formatOutsourcingDisplay({
     return `${sqm}㎡ × 請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
   }
 
-  const count = Number(laborCount || 0);
+  const count = normalizeLaborCount(laborCount);
   const unit = Number(laborUnitPrice || 0);
   if (count > 0) {
-    return `${count}人工 × 常用単価 ${yen(unit)} = ${yen(amount)}`;
+    return `${formatLaborCountLabel(count)} × 常用単価 ${yen(unit)} = ${yen(amount)}`;
   }
   if (amount > 0) {
     return `外注費 ${yen(amount)}`;
   }
-  return `${count}人工 × 常用単価 ${yen(unit)} = ${yen(amount)}`;
+  return `${formatLaborCountLabel(count)} × 常用単価 ${yen(unit)} = ${yen(amount)}`;
 }
 
 export function formatOutsourcingCostLine(params) {
@@ -223,9 +235,9 @@ export function formatOutsourcingCostLine(params) {
     return `+ 外注費 ${yen(amount)}`;
   }
 
-  const count = Number(params.laborCount || 0);
+  const count = normalizeLaborCount(params.laborCount);
   if (count > 0) {
-    return `+ ${count}人工 × 常用単価 ${yen(params.laborUnitPrice)} = ${yen(amount)}`;
+    return `+ ${formatLaborCountLabel(count)} × 常用単価 ${yen(params.laborUnitPrice)} = ${yen(amount)}`;
   }
   return `+ 外注費 ${yen(amount)}`;
 }
@@ -539,7 +551,7 @@ export function calcEstimateTotals({
     travelCostTotal,
     parkingFee: parking,
     outsourcingMode: outsourcingModeValue,
-    laborCount: Number(laborCount || 0),
+    laborCount: normalizeLaborCount(laborCount),
     laborUnitPrice: Number(laborUnitPrice || 0),
     outsourcingSqmUnitPrice: Number(outsourcingSqmUnitPrice || 0),
     labor: outsourcingCost,
