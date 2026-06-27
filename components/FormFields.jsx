@@ -64,6 +64,35 @@ export function Input({ label, value, setValue, type = "text" }) {
   );
 }
 
+export function RadioGroup({ label, value, setValue, options }) {
+  return (
+    <fieldset style={{ border: "none", margin: 0, padding: 0 }}>
+      {label && (
+        <legend style={{ ...s.label, marginBottom: 10, padding: 0 }}>{label}</legend>
+      )}
+      <div style={s.radioGroup}>
+        {options.map((option) => {
+          const optionValue = typeof option === "string" ? option : option.value;
+          const optionLabel = typeof option === "string" ? option : option.label;
+          const checked = value === optionValue;
+          return (
+            <label key={optionValue} style={s.radioOption}>
+              <input
+                type="radio"
+                name={label || "radio-group"}
+                value={optionValue}
+                checked={checked}
+                onChange={() => setValue(optionValue)}
+              />
+              <span>{optionLabel}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
 export function Select({ label, value, setValue, options }) {
   return (
     <label style={s.label}>

@@ -17,15 +17,15 @@ import {
 import { hasPdfFeatures, hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
 import AiProfitDiagnosis from "./AiProfitDiagnosis";
 import {
+  getDefaultTripType,
   getInitialTransportState,
   TRANSPORT_FEE_METHODS,
+  TRANSPORT_MODE_FIXED,
   TRANSPORT_MODE_GPS,
-  TRANSPORT_MODES,
-  TRIP_TYPES,
 } from "../utils/calcTransport";
-import TransportGpsPanel from "./TransportGpsPanel";
+import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
-import { Collapsible, Input, ReadOnlyStat, Select } from "./FormFields";
+import { Collapsible, Input, RadioGroup, ReadOnlyStat, Select } from "./FormFields";
 
 function getStandardLaborUnitPrice(company, fromClient) {
   return Number(
@@ -190,6 +190,7 @@ export default function EstimateForm({
   const [tripType, setTripType] = useState(initialTransport.tripType);
   const [kmRate, setKmRate] = useState(initialTransport.kmRate);
   const [fixedTransport, setFixedTransport] = useState(initialTransport.fixedTransport);
+  const [highwayToll, setHighwayToll] = useState(initialTransport.highwayToll ?? 0);
   const [parkingFee, setParkingFee] = useState(initialTransport.parkingFee);
   const [currentLat, setCurrentLat] = useState(initialTransport.currentLat);
   const [currentLng, setCurrentLng] = useState(initialTransport.currentLng);
@@ -202,11 +203,18 @@ export default function EstimateForm({
     if (method === "gps") {
       setTransportMode(TRANSPORT_MODE_GPS);
       setKmRate(Number(company?.transportKmRate ?? 40));
-      setTripType(company?.transportRoundTripDefault === false ? "oneWay" : "roundTrip");
+      setTripType(getDefaultTripType(company));
       return;
     }
-    setTransportMode((prev) => (prev === TRANSPORT_MODE_GPS ? "fixed" : prev));
+    setTransportMode(TRANSPORT_MODE_FIXED);
   };
+
+  const gpsKmRate = Number(company?.transportKmRate ?? 40);
+  const gpsTripType = getDefaultTripType(company);
+  const activeTransportMode =
+    transportFeeMethod === "gps" ? TRANSPORT_MODE_GPS : TRANSPORT_MODE_FIXED;
+  const activeKmRate = transportFeeMethod === "gps" ? gpsKmRate : kmRate;
+  const activeTripType = transportFeeMethod === "gps" ? gpsTripType : tripType;
 
   useEffect(() => {
     if (!clients.some((c) => c.name === client) && clients[0]) {
@@ -229,10 +237,10 @@ export default function EstimateForm({
     setLaborUnitPrice(synced.laborUnitPrice);
     setOutsourcingSqmUnitPrice(synced.outsourcingSqmUnitPrice);
     setTargetProfitRate(synced.targetProfitRate);
-    if (transportFeeMethod === "manual" && transportMode === "fixed") {
+    if (transportFeeMethod === "manual") {
       setFixedTransport(synced.fixedTransport);
     }
-  }, [clients, client, workType, transportMode, transportFeeMethod]);
+  }, [clients, client, workType, transportFeeMethod]);
 
   const clientOptions = clients.map((c) => c.name);
   const totals = calcEstimateTotals({
@@ -249,11 +257,13 @@ export default function EstimateForm({
     laborUnitPrice,
     outsourcingSqmUnitPrice,
     labor: directLabor,
-    transportMode,
+    transportMode: activeTransportMode,
+    transportFeeMethod,
     distanceKm,
-    kmRate,
-    tripType,
+    kmRate: activeKmRate,
+    tripType: activeTripType,
     fixedTransport,
+    highwayToll,
     parkingFee,
   });
   const profitSimulator = calcProfitSimulator({
@@ -291,17 +301,19 @@ export default function EstimateForm({
     targetProfitRate: Number(targetProfitRate || DEFAULT_TARGET_PROFIT_RATE),
     desiredProfitAmount: Number(desiredProfitAmount || 0),
     transportFeeMethod,
-    transportMode,
+    transportMode: activeTransportMode,
     distanceKm,
-    tripType,
-    kmRate,
+    tripType: activeTripType,
+    kmRate: activeKmRate,
     fixedTransport,
+    highwayToll,
     parkingFee,
     currentLat,
     currentLng,
     currentLocationLabel,
     transport: totals.transportCost,
     transportCost: totals.transportCost,
+    travelCostTotal: totals.travelCostTotal,
     unitPrice: sellingUnitPrice,
     sales: totals.sales,
     cost: totals.cost,
@@ -330,6 +342,20 @@ export default function EstimateForm({
         <h2 style={s.blockTitle}>1. 現場</h2>
         <Input label="現場名" value={siteName} setValue={setSiteName} />
         <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
+        <SiteTransportSection
+          company={company}
+          siteAddress={siteAddress}
+          distanceKm={distanceKm}
+          currentLat={currentLat}
+          currentLng={currentLng}
+          currentLocationLabel={currentLocationLabel}
+          onLocationChange={({ lat, lng, label }) => {
+            setCurrentLat(lat);
+            setCurrentLng(lng);
+            setCurrentLocationLabel(label);
+          }}
+          onDistanceChange={setDistanceKm}
+        />
         <Select label="元請" value={client} setValue={setClient} options={clientOptions} />
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
@@ -347,14 +373,40 @@ export default function EstimateForm({
           <p style={s.readOnlyValue}>{yen(totals.labor)}</p>
         </div>
 
-        <div>
-          <p style={s.resultLabel}>交通費</p>
-          <p style={s.readOnlyValue}>{yen(totals.transportCost)}</p>
-        </div>
+        <RadioGroup
+          label="交通費方式"
+          value={transportFeeMethod}
+          setValue={handleTransportFeeMethodChange}
+          options={TRANSPORT_FEE_METHODS}
+        />
 
+        {transportFeeMethod === "gps" ? (
+          <div style={s.transportCalcBox}>
+            <p style={s.resultLabel}>交通費（自動計算）</p>
+            <p style={s.readOnlyValue}>{yen(totals.transportCost)}</p>
+            <p style={s.hint}>
+              {Number(distanceKm || 0)}km × ¥{activeKmRate}/km（
+              {activeTripType === "roundTrip" ? "往復" : "片道"}）
+            </p>
+          </div>
+        ) : (
+          <Input
+            label="交通費 円"
+            value={fixedTransport}
+            setValue={setFixedTransport}
+            type="number"
+          />
+        )}
+
+        <Input label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
         <Input label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
 
-        <Collapsible label="外注費・交通費の設定">
+        <div style={s.transportCalcBox}>
+          <p style={s.resultLabel}>交通費合計（原価加算）</p>
+          <p style={{ ...s.readOnlyValue, color: "#ff8a00" }}>{yen(totals.travelCostTotal)}</p>
+        </div>
+
+        <Collapsible label="外注費の設定">
           <Select
             label="外注費方式"
             value={outsourcingMode}
@@ -386,59 +438,6 @@ export default function EstimateForm({
               setValue={setDirectLabor}
               type="number"
             />
-          )}
-
-          <Select
-            label="交通費方式"
-            value={transportFeeMethod}
-            setValue={handleTransportFeeMethodChange}
-            options={TRANSPORT_FEE_METHODS}
-          />
-
-          {transportFeeMethod === "gps" ? (
-            <TransportGpsPanel
-              company={company}
-              siteAddress={siteAddress}
-              currentLat={currentLat}
-              currentLng={currentLng}
-              currentLocationLabel={currentLocationLabel}
-              distanceKm={distanceKm}
-              tripType={tripType}
-              kmRate={kmRate}
-              onLocationChange={({ lat, lng, label }) => {
-                setCurrentLat(lat);
-                setCurrentLng(lng);
-                setCurrentLocationLabel(label);
-              }}
-            />
-          ) : (
-            <>
-              <Select
-                label="手入力方式"
-                value={transportMode === TRANSPORT_MODE_GPS ? "fixed" : transportMode}
-                setValue={setTransportMode}
-                options={TRANSPORT_MODES}
-              />
-              {transportMode === "distance" ? (
-                <>
-                  <Input label="距離 km" value={distanceKm} setValue={setDistanceKm} type="number" />
-                  <Select
-                    label="片道/往復"
-                    value={tripType}
-                    setValue={setTripType}
-                    options={TRIP_TYPES}
-                  />
-                  <Input label="1km単価 円/km" value={kmRate} setValue={setKmRate} type="number" />
-                </>
-              ) : (
-                <Input
-                  label="交通費 円"
-                  value={fixedTransport}
-                  setValue={setFixedTransport}
-                  type="number"
-                />
-              )}
-            </>
           )}
 
           <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />

@@ -1,18 +1,13 @@
 export const DEFAULT_TRANSPORT_KM_RATE = 40;
 
 export const TRANSPORT_FEE_METHODS = [
-  { value: "gps", label: "GPS自動計算" },
+  { value: "gps", label: "GPS自動" },
   { value: "manual", label: "手入力" },
 ];
 
 export const TRANSPORT_MODE_GPS = "gps";
 export const TRANSPORT_MODE_DISTANCE = "distance";
 export const TRANSPORT_MODE_FIXED = "fixed";
-
-export const TRANSPORT_MODES = [
-  { value: TRANSPORT_MODE_DISTANCE, label: "距離計算" },
-  { value: TRANSPORT_MODE_FIXED, label: "一式入力" },
-];
 
 export const TRIP_TYPES = [
   { value: "oneWay", label: "片道" },
@@ -34,16 +29,59 @@ export function calcDistanceTransport({ distanceKm, kmRate, tripType }) {
 
 export function calcTransportTotal({
   transportMode = TRANSPORT_MODE_FIXED,
+  transportFeeMethod = "manual",
   distanceKm,
   kmRate,
   tripType,
   fixedTransport,
   transport,
 }) {
-  if (transportMode === TRANSPORT_MODE_DISTANCE || transportMode === TRANSPORT_MODE_GPS) {
+  if (
+    transportFeeMethod === "gps" ||
+    transportMode === TRANSPORT_MODE_GPS ||
+    transportMode === TRANSPORT_MODE_DISTANCE
+  ) {
     return calcDistanceTransport({ distanceKm, kmRate, tripType });
   }
   return Number(fixedTransport ?? transport ?? 0);
+}
+
+export function calcTravelCostTotal({ transportCost, highwayToll, parkingFee }) {
+  return (
+    Number(transportCost || 0) +
+    Number(highwayToll || 0) +
+    Number(parkingFee || 0)
+  );
+}
+
+export function getEffectiveTravelDistanceKm(estimate, company = {}) {
+  const t = normalizeEstimateTransport(estimate, company);
+  if (t.transportFeeMethod !== "gps" && t.transportMode !== TRANSPORT_MODE_GPS) {
+    return 0;
+  }
+  const multiplier = t.tripType === "roundTrip" ? 2 : 1;
+  return Number((t.distanceKm * multiplier).toFixed(1));
+}
+
+export function getTravelCostBreakdown(estimate, company = {}) {
+  const t = normalizeEstimateTransport(estimate, company);
+  const transportCost = calcTransportTotal({
+    transportMode: t.transportMode,
+    transportFeeMethod: t.transportFeeMethod,
+    distanceKm: t.distanceKm,
+    kmRate: t.kmRate,
+    tripType: t.tripType,
+    fixedTransport: t.fixedTransport,
+  });
+  const highwayToll = Number(t.highwayToll || 0);
+  const parkingFee = Number(t.parkingFee || 0);
+  return {
+    transportCost,
+    highwayToll,
+    parkingFee,
+    travelCostTotal: calcTravelCostTotal({ transportCost, highwayToll, parkingFee }),
+    travelDistanceKm: getEffectiveTravelDistanceKm(estimate, company),
+  };
 }
 
 export function normalizeTransportFeeMethod(estimate) {
@@ -51,6 +89,9 @@ export function normalizeTransportFeeMethod(estimate) {
     return estimate.transportFeeMethod;
   }
   if (estimate?.transportMode === TRANSPORT_MODE_GPS) return "gps";
+  if (Number(estimate?.distanceKm) > 0 && estimate?.transportMode === TRANSPORT_MODE_DISTANCE) {
+    return "gps";
+  }
   return "manual";
 }
 
@@ -63,8 +104,10 @@ export function normalizeEstimateTransport(estimate, company = {}) {
       tripType: getDefaultTripType(company),
       kmRate: getDefaultKmRate(company),
       fixedTransport: 0,
+      highwayToll: 0,
       parkingFee: 0,
       transportCost: 0,
+      travelCostTotal: 0,
       currentLat: null,
       currentLng: null,
       currentLocationLabel: "",
@@ -79,6 +122,8 @@ export function normalizeEstimateTransport(estimate, company = {}) {
 
   if (transportFeeMethod === "gps") {
     transportMode = TRANSPORT_MODE_GPS;
+  } else if (transportFeeMethod === "manual") {
+    transportMode = TRANSPORT_MODE_FIXED;
   }
 
   const distanceKm = Number(estimate.distanceKm ?? 0);
@@ -90,17 +135,21 @@ export function normalizeEstimateTransport(estimate, company = {}) {
       (transportMode === TRANSPORT_MODE_FIXED ? estimate.transportCost : 0) ??
       0
   );
+  const highwayToll = Number(estimate.highwayToll ?? 0);
   const parkingFee = Number(estimate.parkingFee ?? 0);
-  const transportCost = Number(
-    estimate.transportCost ??
-      calcTransportTotal({
-        transportMode,
-        distanceKm,
-        kmRate,
-        tripType,
-        fixedTransport,
-      })
-  );
+  const transportCost = calcTransportTotal({
+    transportMode,
+    transportFeeMethod,
+    distanceKm,
+    kmRate,
+    tripType,
+    fixedTransport,
+  });
+  const travelCostTotal = calcTravelCostTotal({
+    transportCost,
+    highwayToll,
+    parkingFee,
+  });
 
   return {
     transportFeeMethod,
@@ -109,8 +158,10 @@ export function normalizeEstimateTransport(estimate, company = {}) {
     tripType,
     kmRate,
     fixedTransport,
+    highwayToll,
     parkingFee,
     transportCost,
+    travelCostTotal,
     currentLat: estimate.currentLat ?? null,
     currentLng: estimate.currentLng ?? null,
     currentLocationLabel: estimate.currentLocationLabel ?? "",
@@ -119,28 +170,20 @@ export function normalizeEstimateTransport(estimate, company = {}) {
 
 export function getTransportModeLabel(estimate, company = {}) {
   const t = normalizeEstimateTransport(estimate, company);
-  if (t.transportMode === TRANSPORT_MODE_GPS) {
+  if (t.transportFeeMethod === "gps") {
     const trip = t.tripType === "roundTrip" ? "往復" : "片道";
-    return `GPS自動計算（${trip}）`;
+    return `GPS自動（${trip}）`;
   }
-  if (t.transportMode === TRANSPORT_MODE_DISTANCE) {
-    const trip = t.tripType === "roundTrip" ? "往復" : "片道";
-    return `距離計算（${trip}）`;
-  }
-  return "手入力（一式）";
+  return "手入力";
 }
 
 export function getTransportDetailLabel(estimate, company = {}) {
   const t = normalizeEstimateTransport(estimate, company);
-  if (t.transportMode === TRANSPORT_MODE_GPS) {
+  if (t.transportFeeMethod === "gps") {
     const trip = t.tripType === "roundTrip" ? "往復" : "片道";
     return `${t.distanceKm}km × ¥${t.kmRate}/km（${trip}）`;
   }
-  if (t.transportMode === TRANSPORT_MODE_DISTANCE) {
-    const trip = t.tripType === "roundTrip" ? "往復" : "片道";
-    return `${t.distanceKm}km × ¥${t.kmRate}/km（${trip}）`;
-  }
-  return `固定 ${Number(t.fixedTransport).toLocaleString()}円`;
+  return `交通費 ${Number(t.fixedTransport).toLocaleString()}円`;
 }
 
 export function getInitialTransportState(
@@ -159,6 +202,7 @@ export function getInitialTransportState(
       tripType: defaultTripType,
       kmRate: defaultKmRate,
       fixedTransport: clientDefaultTransport,
+      highwayToll: 0,
       parkingFee: 0,
       currentLat: null,
       currentLng: null,
@@ -167,10 +211,7 @@ export function getInitialTransportState(
   }
 
   const normalized = normalizeEstimateTransport(initialEstimate, company);
-  if (initialEstimate.transportMode == null && Number(initialEstimate.distanceKm) > 0) {
-    return normalized;
-  }
-  if (initialEstimate.transportMode == null) {
+  if (initialEstimate.transportMode == null && normalized.transportFeeMethod === "manual") {
     return {
       ...normalized,
       fixedTransport:

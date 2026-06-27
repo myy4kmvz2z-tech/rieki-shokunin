@@ -74,6 +74,20 @@ export default function Dashboard({
 
       <SectionDivider />
 
+      <div style={s.homeMetricStack}>
+        <HomeMetric
+          label="今日の移動距離"
+          value={`${dashboard.todayTravelDistanceKm.toFixed(1)} km`}
+        />
+        <HomeMetric
+          label="今月移動距離"
+          value={`${dashboard.monthTravelDistanceKm.toFixed(1)} km`}
+        />
+        <HomeMetric label="今月交通費" value={yen(dashboard.monthTransportCost)} accent />
+      </div>
+
+      <SectionDivider />
+
       <CeoCommentCard estimates={estimates} plan={plan} dashboard={dashboard} />
 
       <SectionDivider />

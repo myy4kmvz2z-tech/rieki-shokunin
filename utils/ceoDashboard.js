@@ -1,4 +1,5 @@
 import { resolveEstimateFinancials } from "./calcProfit";
+import { getEffectiveTravelDistanceKm, getTravelCostBreakdown } from "./calcTransport";
 import { calcPaymentAmounts } from "../lib/payment";
 
 const DEFAULT_MONTHLY_TARGET = 500000;
@@ -13,6 +14,14 @@ function parseEstimateDate(createdAt) {
 
 function isSameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+}
+
+function isSameDay(a, b) {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 function accumulateEstimate(estimate, { clientRates, includeRates }) {
@@ -65,12 +74,17 @@ export function buildCeoDashboard(estimates, targets = {}) {
 
   let monthProfit = 0;
   let monthSales = 0;
+  let todayTravelDistanceKm = 0;
+  let monthTravelDistanceKm = 0;
+  let monthTransportCost = 0;
   const monthClientRates = {};
   const allClientRates = {};
 
   estimates.forEach((estimate) => {
     const date = parseEstimateDate(estimate.createdAt);
     const isThisMonth = !date || isSameMonth(date, now);
+    const isToday = !date || isSameDay(date, now);
+    const travel = getTravelCostBreakdown(estimate);
 
     if (isThisMonth) {
       const result = accumulateEstimate(estimate, {
@@ -79,6 +93,12 @@ export function buildCeoDashboard(estimates, targets = {}) {
       });
       monthProfit += result.profit;
       monthSales += result.sales;
+      monthTravelDistanceKm += getEffectiveTravelDistanceKm(estimate);
+      monthTransportCost += travel.travelCostTotal;
+    }
+
+    if (isToday) {
+      todayTravelDistanceKm += getEffectiveTravelDistanceKm(estimate);
     }
 
     accumulateEstimate(estimate, {
@@ -106,6 +126,9 @@ export function buildCeoDashboard(estimates, targets = {}) {
     monthlyRemainingLabel: formatCompactYen(monthlyRemaining),
     unbilledAmount,
     pendingPaymentAmount,
+    todayTravelDistanceKm: Math.round(todayTravelDistanceKm * 10) / 10,
+    monthTravelDistanceKm: Math.round(monthTravelDistanceKm * 10) / 10,
+    monthTransportCost,
     clientRanking: buildClientRanking(rankingSource),
   };
 }

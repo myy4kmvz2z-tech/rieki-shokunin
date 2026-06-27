@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { DEFAULT_COMPANY, DEFAULT_LABOR_UNIT_PRICE } from "../lib/constants";
+import { TRIP_TYPES } from "../utils/calcTransport";
 import { s } from "../lib/styles";
-import { Input } from "./FormFields";
+import { Input, RadioGroup } from "./FormFields";
 
 export default function CompanySettings({ company, onBack, onSave }) {
   const [form, setForm] = useState({
@@ -94,23 +95,22 @@ export default function CompanySettings({ company, onBack, onSave }) {
             setValue={(v) => setField("transportKmRate", v)}
             type="number"
           />
-          <label style={s.toggleRow}>
-            <input
-              type="checkbox"
-              checked={Boolean(form.transportRoundTripDefault)}
-              onChange={(e) => setField("transportRoundTripDefault", e.target.checked)}
-            />
-            <span>往復を初期値にする</span>
-          </label>
+          <RadioGroup
+            label="片道 / 往復"
+            value={form.transportRoundTripDefault ? "roundTrip" : "oneWay"}
+            setValue={(v) => setField("transportRoundTripDefault", v === "roundTrip")}
+            options={TRIP_TYPES}
+          />
         </div>
       </section>
 
       <section style={s.listCard}>
         <h2 style={s.sectionTitle}>Google Maps API（将来対応）</h2>
         <p style={s.hint}>
-          GPS交通費の Distance Matrix API 用キーです。フェーズ1では保存のみで通信は行いません。
+          GPS自動距離取得用。Ver.1 では保存のみで通信は行いません。
         </p>
-        {/* TODO: Phase 2 - APIキーを使った Distance Matrix API 通信 */}
+        {/* TODO: Google Maps Distance Matrix API 通信 */}
+        {/* TODO: GPS自動取得・現在地自動取得 */}
         <div style={s.form}>
           <Input
             label="Google Maps APIキー"

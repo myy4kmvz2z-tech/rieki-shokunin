@@ -290,10 +290,12 @@ export function resolveEstimateFinancials(estimate, standardLaborUnitPrice) {
     outsourcingSqmUnitPrice: laborFields.outsourcingSqmUnitPrice,
     labor: estimate.labor ?? 0,
     transportMode: transport.transportMode,
+    transportFeeMethod: transport.transportFeeMethod,
     distanceKm: transport.distanceKm,
     kmRate: transport.kmRate,
     tripType: transport.tripType,
     fixedTransport: transport.fixedTransport,
+    highwayToll: transport.highwayToll,
     parkingFee: transport.parkingFee,
   });
 
@@ -315,6 +317,8 @@ export function resolveEstimateFinancials(estimate, standardLaborUnitPrice) {
     laborUnitPrice: financials.laborUnitPrice,
     outsourcingSqmUnitPrice: financials.outsourcingSqmUnitPrice,
     transportCost: financials.transportCost,
+    highwayToll: financials.highwayToll,
+    travelCostTotal: financials.travelCostTotal,
     parkingFee: financials.parkingFee,
     labor: financials.labor,
     cost: financials.cost,
@@ -467,6 +471,8 @@ export function calcEstimateTotals({
   kmRate,
   tripType,
   fixedTransport,
+  transportFeeMethod,
+  highwayToll,
   parkingFee,
 }) {
   const costUnitPrice = calcCostUnitPrice({
@@ -499,15 +505,18 @@ export function calcEstimateTotals({
   });
   const transportCost = calcTransportTotal({
     transportMode,
+    transportFeeMethod,
     distanceKm,
     kmRate,
     tripType,
     fixedTransport,
   });
+  const highway = Number(highwayToll || 0);
   const parking = Number(parkingFee || 0);
+  const travelCostTotal = transportCost + highway + parking;
   const sqm = Number(area || 0);
   const sales = effectiveSellingUnitPrice * sqm - discountAmount;
-  const cost = costUnitPrice * sqm + outsourcingCost + transportCost + parking;
+  const cost = costUnitPrice * sqm + outsourcingCost + travelCostTotal;
   const profit = sales - cost;
   const rate = sales > 0 ? (profit / sales) * 100 : 0;
 
@@ -526,6 +535,8 @@ export function calcEstimateTotals({
     pasteLabor: pasteLaborAmount,
     recommendedSellingUnitPrice,
     transportCost,
+    highwayToll: highway,
+    travelCostTotal,
     parkingFee: parking,
     outsourcingMode: outsourcingModeValue,
     laborCount: Number(laborCount || 0),
