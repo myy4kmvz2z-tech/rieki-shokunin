@@ -9,6 +9,7 @@ import {
 } from "../lib/constants";
 import {
   calcEstimateTotals,
+  calcProfitSimulator,
   formatCostDisplay,
   formatOutsourcingDisplay,
   formatSalesDisplay,
@@ -78,6 +79,7 @@ function getInitialCostState(
       sellingUnitPrice: 0,
       discount: 0,
       targetProfitRate: fromClient.standardTargetProfitRate,
+      desiredProfitAmount: 0,
       ...getInitialOutsourcingState(null, fromClient, company),
     };
   }
@@ -106,6 +108,7 @@ function getInitialCostState(
     discount: initialEstimate.discount ?? 0,
     targetProfitRate:
       initialEstimate.targetProfitRate ?? editClient.standardTargetProfitRate,
+    desiredProfitAmount: initialEstimate.desiredProfitAmount ?? 0,
     ...getInitialOutsourcingState(initialEstimate, editClient, company),
   };
 }
@@ -174,6 +177,7 @@ export default function EstimateForm({
   );
   const [directLabor, setDirectLabor] = useState(initialCost.directLabor);
   const [targetProfitRate, setTargetProfitRate] = useState(initialCost.targetProfitRate);
+  const [desiredProfitAmount, setDesiredProfitAmount] = useState(initialCost.desiredProfitAmount);
   const [transportMode, setTransportMode] = useState(initialTransport.transportMode);
   const [distanceKm, setDistanceKm] = useState(initialTransport.distanceKm);
   const [tripType, setTripType] = useState(initialTransport.tripType);
@@ -230,6 +234,12 @@ export default function EstimateForm({
     parkingFee,
   });
   const recommendedSellingUnitPrice = totals.recommendedSellingUnitPrice;
+  const profitSimulator = calcProfitSimulator({
+    totalCost: totals.cost,
+    area,
+    desiredProfitRate: targetProfitRate,
+    desiredProfitAmount,
+  });
   const profitRateBand = getProfitRateColorBand(totals.rate);
   const distanceTransportPreview = calcDistanceTransport({ distanceKm, kmRate, tripType });
   const transportPreviewLabel =
@@ -268,6 +278,7 @@ export default function EstimateForm({
     outsourcingSqmUnitPrice: totals.outsourcingSqmUnitPrice,
     labor: totals.labor,
     targetProfitRate: Number(targetProfitRate || DEFAULT_TARGET_PROFIT_RATE),
+    desiredProfitAmount: Number(desiredProfitAmount || 0),
     transportMode,
     distanceKm,
     tripType,
@@ -305,7 +316,7 @@ export default function EstimateForm({
         <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-        <p style={s.hint}>元請を選ぶと外注方式・原価・目標利益率の標準値が自動入力されます</p>
+        <p style={s.hint}>元請を選ぶと外注方式・原価・希望利益率の標準値が自動入力されます</p>
       </div>
 
       <section style={s.blockSection}>
@@ -375,31 +386,68 @@ export default function EstimateForm({
 
       <section style={s.blockSection}>
         <h2 style={s.blockTitle}>② 売価</h2>
-        <p style={s.hint}>推奨販売単価 {yen(recommendedSellingUnitPrice)}/㎡（原価単価 + 貼り手間）</p>
         <Input
           label="販売単価 円/㎡"
           value={sellingUnitPrice}
           setValue={setSellingUnitPrice}
           type="number"
         />
-        <p style={s.hint}>未入力なら推奨販売単価で計算します</p>
+        <p style={s.hint}>未入力なら原価単価 + 貼り手間（{yen(recommendedSellingUnitPrice)}/㎡）で計算します</p>
         {totals.usesRecommendedSellingUnitPrice && (
-          <p style={s.hint}>販売単価未入力のため、推奨販売単価を使用中</p>
+          <p style={s.hint}>販売単価未入力のため、原価単価 + 貼り手間を使用中</p>
         )}
-        <button
-          type="button"
-          style={{ ...s.secondary, width: "100%" }}
-          onClick={() => setSellingUnitPrice(recommendedSellingUnitPrice)}
-        >
-          推奨販売単価を販売単価に反映
-        </button>
         <Input label="値引き 円" value={discount} setValue={setDiscount} type="number" />
+
+        <hr style={s.blockDivider} />
+
+        <h3 style={{ ...s.blockTitle, fontSize: 14 }}>利益シミュレーター</h3>
+        <p style={s.hint}>利益を残すにはいくらで見積を出せばいいかを逆算します</p>
         <Input
-          label="目標利益率 %"
+          label="希望利益率 %"
           value={targetProfitRate}
           setValue={setTargetProfitRate}
           type="number"
         />
+        <Input
+          label="希望利益額 円（任意）"
+          value={desiredProfitAmount}
+          setValue={setDesiredProfitAmount}
+          type="number"
+        />
+
+        <div style={s.result}>
+          <p style={{ ...s.muted, margin: "0 0 8px", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
+          <p style={s.resultLabel}>原価合計</p>
+          <p style={s.resultDetail}>{yen(profitSimulator.totalCost)}</p>
+          <p style={s.resultLabel}>希望利益率</p>
+          <p style={s.resultDetail}>{Number(profitSimulator.desiredProfitRate || 0)}%</p>
+          <p style={s.resultLabel}>希望利益額</p>
+          <p style={s.resultDetail}>
+            {profitSimulator.desiredProfitAmount > 0
+              ? yen(profitSimulator.desiredProfitAmount)
+              : "—（未入力）"}
+          </p>
+          <p style={{ ...s.muted, margin: "8px 0", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
+          <p style={s.resultLabel}>推奨販売単価</p>
+          <p style={{ ...s.resultDetail, color: "#fff", fontWeight: 900, fontSize: 18 }}>
+            {profitSimulator.canCalculate
+              ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
+              : "—"}
+          </p>
+          <p style={{ ...s.muted, margin: "8px 0 0", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
+          {profitSimulator.message && (
+            <p style={{ ...s.hint, marginTop: 12, color: "#ff8a00" }}>{profitSimulator.message}</p>
+          )}
+        </div>
+
+        <button
+          type="button"
+          style={{ ...s.secondary, width: "100%" }}
+          disabled={!profitSimulator.canCalculate}
+          onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+        >
+          推奨販売単価を販売単価へ反映
+        </button>
       </section>
 
       <section style={s.blockSection}>

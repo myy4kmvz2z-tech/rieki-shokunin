@@ -36,6 +36,56 @@ export function calcRecommendedSellingUnitPrice(costUnitPrice, pasteLabor) {
   return Number(costUnitPrice || 0) + Number(pasteLabor || 0);
 }
 
+export function calcProfitSimulator({
+  totalCost,
+  area,
+  desiredProfitRate,
+  desiredProfitAmount,
+}) {
+  const sqm = Number(area || 0);
+  const cost = Number(totalCost || 0);
+  const rate = Number(desiredProfitRate ?? DEFAULT_TARGET_PROFIT_RATE);
+  const profitAmount = Number(desiredProfitAmount || 0);
+  const base = {
+    totalCost: cost,
+    desiredProfitRate: rate,
+    desiredProfitAmount: profitAmount,
+    recommendedUnitPrice: 0,
+    mode: null,
+    message: "",
+    canCalculate: false,
+  };
+
+  if (sqm <= 0) {
+    return { ...base, message: "施工面積を入力してください" };
+  }
+
+  if (profitAmount > 0) {
+    const recommendedUnitPrice = Math.ceil((cost + profitAmount) / sqm);
+    return {
+      ...base,
+      recommendedUnitPrice,
+      mode: "amount",
+      message: `この単価なら利益${yen(profitAmount)}残ります`,
+      canCalculate: true,
+    };
+  }
+
+  if (rate >= 100) {
+    return { ...base, message: "希望利益率は100%未満で入力してください" };
+  }
+
+  const sales = cost / (1 - rate / 100);
+  const recommendedUnitPrice = Math.ceil(sales / sqm);
+  return {
+    ...base,
+    recommendedUnitPrice,
+    mode: "rate",
+    message: `この単価なら利益率${rate}%になります`,
+    canCalculate: true,
+  };
+}
+
 export function calcEffectiveSellingUnitPrice(inputSellingUnitPrice, recommendedSellingUnitPrice) {
   const input = Number(inputSellingUnitPrice || 0);
   if (input > 0) return input;
