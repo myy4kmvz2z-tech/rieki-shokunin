@@ -1,4 +1,4 @@
-import { getPlanLabel, getUsageSummary } from "../lib/plan";
+import { getUsageSummary } from "../lib/plan";
 import { s } from "../lib/styles";
 
 export default function UsageCard({ plan, clientCount, estimateCount, compact = false }) {
@@ -7,7 +7,7 @@ export default function UsageCard({ plan, clientCount, estimateCount, compact = 
   return (
     <section style={compact ? s.usageCardCompact : s.usageCard}>
       <p style={s.usageTitle}>利用状況</p>
-      <p style={s.usageRow}>現在のプラン：{getPlanLabel(plan)}</p>
+      <p style={s.usageRow}>プラン：{usage.planLabel}</p>
       <p style={s.usageRow}>
         元請：{usage.clientCount}件 / {usage.clientLimitLabel}
       </p>
@@ -22,7 +22,7 @@ export default function UsageCard({ plan, clientCount, estimateCount, compact = 
       )}
       {(usage.isClientLimitReached || usage.isEstimateLimitReached) && (
         <p style={{ ...s.usageNote, color: "#ff8a00", marginTop: compact ? 4 : 8 }}>
-          上限に達しています。料金プラン画面からアップグレードしてください。
+          上限に達しています。料金プランからアップグレードしてください。
         </p>
       )}
     </section>

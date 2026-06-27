@@ -1,5 +1,6 @@
 import { buildDashboard, yen } from "../utils/calcProfit";
 import CeoCommentCard from "./CeoCommentCard";
+import CurrentPlanBadge from "./CurrentPlanBadge";
 import UsageCard from "./UsageCard";
 import { s } from "../lib/styles";
 
@@ -8,6 +9,7 @@ export default function Dashboard({ estimates, clients, plan }) {
 
   return (
     <>
+      <CurrentPlanBadge plan={plan} />
       <section style={s.card}>
         <p style={s.cardLabel}>今日の利益</p>
         <h2 style={s.cardValue}>{yen(stats.todayProfit)}</h2>

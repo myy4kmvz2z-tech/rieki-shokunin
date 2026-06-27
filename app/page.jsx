@@ -220,7 +220,7 @@ export default function Page() {
       />
       <ConfirmModal
         open={showPdfUpgradeModal}
-        message={getPdfUpgradeMessage()}
+        message={getPdfUpgradeMessage(plan)}
         confirmLabel="閉じる"
         alertOnly
         onConfirm={() => setShowPdfUpgradeModal(false)}

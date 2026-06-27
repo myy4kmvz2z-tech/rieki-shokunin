@@ -1,5 +1,5 @@
 import { buildCeoComments } from "../utils/aiProfitDiagnosis";
-import { hasProFeatures } from "../lib/plan";
+import { hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
 import { s } from "../lib/styles";
 
 export default function CeoCommentCard({ estimates, plan }) {
@@ -16,7 +16,7 @@ export default function CeoCommentCard({ estimates, plan }) {
           </p>
         ))
       ) : (
-        <p style={s.ceoCommentLocked}>プロプランでAI社長コメントが利用できます。</p>
+        <p style={s.ceoCommentLocked}>{PRO_PLAN_UPGRADE_MESSAGE}</p>
       )}
     </section>
   );

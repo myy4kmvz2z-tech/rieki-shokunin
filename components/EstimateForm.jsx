@@ -14,7 +14,7 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { hasPdfFeatures, hasProFeatures } from "../lib/plan";
+import { hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
 import AiProfitDiagnosis from "./AiProfitDiagnosis";
 import {
   getInitialTransportState,
@@ -462,7 +462,7 @@ export default function EstimateForm({
               value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
               color={totals.sales > 0 ? profitRateBand.color : "#888"}
             />
-            <p style={s.ceoCommentLocked}>プロプランでAI利益診断が利用できます。</p>
+            <p style={s.ceoCommentLocked}>{PRO_PLAN_UPGRADE_MESSAGE}</p>
           </>
         )}
       </section>
