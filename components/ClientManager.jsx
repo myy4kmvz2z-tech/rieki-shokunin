@@ -11,14 +11,7 @@ import {
 } from "../lib/constants";
 import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
-import { Input, Select } from "./FormFields";
-
-const outsourcingSubSection = {
-  ...s.muted,
-  margin: "8px 0 4px",
-  fontSize: 12,
-  fontWeight: 900,
-};
+import { Collapsible, Input, Select } from "./FormFields";
 
 function ClientSettingsForm({ form, setField }) {
   return (
@@ -26,7 +19,7 @@ function ClientSettingsForm({ form, setField }) {
       <Input label="元請名" value={form.name} setValue={(v) => setField("name", v)} />
 
       <p style={s.formSection}>材料単価</p>
-      <div style={s.priceGrid}>
+      <div style={s.twoColGrid}>
         {PRICE_FIELDS.map(({ key, label }) => (
           <Input
             key={key}
@@ -39,7 +32,7 @@ function ClientSettingsForm({ form, setField }) {
       </div>
 
       <p style={s.formSection}>原価設定</p>
-      <div style={s.priceGrid}>
+      <div style={s.twoColGrid}>
         {COST_UNIT_FIELDS.map(({ key, label }) => (
           <Input
             key={key}
@@ -51,31 +44,25 @@ function ClientSettingsForm({ form, setField }) {
         ))}
       </div>
 
-      <p style={s.formSection}>外注設定</p>
-      <p style={outsourcingSubSection}>① 常用単価（1人工）</p>
-      <Input
-        label="標準常用単価 円/人工"
-        value={form.standardLaborUnitPrice}
-        setValue={(v) => setField("standardLaborUnitPrice", v)}
-        type="number"
-      />
-      <p style={outsourcingSubSection}>② 請負単価（㎡）</p>
-      <Input
-        label="標準請負単価 円/㎡"
-        value={form.standardOutsourcingSqmUnitPrice}
-        setValue={(v) => setField("standardOutsourcingSqmUnitPrice", v)}
-        type="number"
-      />
-      <p style={outsourcingSubSection}>③ 標準外注方式</p>
-      <Select
-        label="標準外注方式"
-        value={form.standardOutsourcingMode}
-        setValue={(v) => setField("standardOutsourcingMode", v)}
-        options={OUTSOURCING_MODES}
-      />
-
-      <p style={s.formSection}>利益設定</p>
-      <div style={s.priceGrid}>
+      <Collapsible label="外注・利益設定">
+        <Input
+          label="標準常用単価 円/人工"
+          value={form.standardLaborUnitPrice}
+          setValue={(v) => setField("standardLaborUnitPrice", v)}
+          type="number"
+        />
+        <Input
+          label="標準請負単価 円/㎡"
+          value={form.standardOutsourcingSqmUnitPrice}
+          setValue={(v) => setField("standardOutsourcingSqmUnitPrice", v)}
+          type="number"
+        />
+        <Select
+          label="標準外注方式"
+          value={form.standardOutsourcingMode}
+          setValue={(v) => setField("standardOutsourcingMode", v)}
+          options={OUTSOURCING_MODES}
+        />
         {PROFIT_SETTING_FIELDS.map(({ key, label }) => (
           <Input
             key={key}
@@ -85,64 +72,30 @@ function ClientSettingsForm({ form, setField }) {
             type="number"
           />
         ))}
-      </div>
+      </Collapsible>
     </>
   );
 }
 
 function ClientFieldList({ client }) {
+  const rows = [
+    ...PRICE_FIELDS.map(({ key, label }) => ({ label, value: yen(client[key]) })),
+    ...COST_UNIT_FIELDS.map(({ key, label }) => ({ label, value: yen(client[key]) })),
+    { label: "常用単価", value: yen(client.standardLaborUnitPrice) },
+    { label: "請負単価", value: yen(client.standardOutsourcingSqmUnitPrice) },
+    { label: "外注方式", value: getOutsourcingModeLabel(client.standardOutsourcingMode) },
+    { label: "目標利益率", value: `${Number(client.standardTargetProfitRate || 0)}%` },
+  ];
+
   return (
-    <>
-      <p style={{ ...s.muted, margin: "0 0 8px", fontSize: 13, fontWeight: 900 }}>材料単価</p>
-      <div style={s.priceList}>
-        {PRICE_FIELDS.map(({ key, label }) => (
-          <p key={key} style={s.priceRow}>
-            <span style={s.muted}>{label}</span>
-            <span>{yen(client[key])}</span>
-          </p>
-        ))}
-      </div>
-
-      <p style={{ ...s.muted, margin: "12px 0 8px", fontSize: 13, fontWeight: 900 }}>原価設定</p>
-      <div style={s.priceList}>
-        {COST_UNIT_FIELDS.map(({ key, label }) => (
-          <p key={key} style={s.priceRow}>
-            <span style={s.muted}>{label}</span>
-            <span>{yen(client[key])}</span>
-          </p>
-        ))}
-      </div>
-
-      <p style={{ ...s.muted, margin: "12px 0 8px", fontSize: 13, fontWeight: 900 }}>外注設定</p>
-      <div style={s.priceList}>
-        <p style={s.priceRow}>
-          <span style={s.muted}>① 標準常用単価 円/人工</span>
-          <span>{yen(client.standardLaborUnitPrice)}</span>
-        </p>
-        <p style={s.priceRow}>
-          <span style={s.muted}>② 標準請負単価 円/㎡</span>
-          <span>{yen(client.standardOutsourcingSqmUnitPrice)}</span>
-        </p>
-        <p style={s.priceRow}>
-          <span style={s.muted}>③ 標準外注方式</span>
-          <span>{getOutsourcingModeLabel(client.standardOutsourcingMode)}</span>
-        </p>
-      </div>
-
-      <p style={{ ...s.muted, margin: "12px 0 8px", fontSize: 13, fontWeight: 900 }}>利益設定</p>
-      <div style={s.priceList}>
-        {PROFIT_SETTING_FIELDS.map(({ key, label }) => (
-          <p key={key} style={s.priceRow}>
-            <span style={s.muted}>{label}</span>
-            <span>
-              {key === "standardTargetProfitRate"
-                ? `${Number(client[key] || 0)}%`
-                : yen(client[key])}
-            </span>
-          </p>
-        ))}
-      </div>
-    </>
+    <div style={s.twoColGrid}>
+      {rows.map(({ label, value }) => (
+        <div key={label} style={{ display: "grid", gap: 4 }}>
+          <span style={{ ...s.muted, fontSize: 12, fontWeight: 900 }}>{label}</span>
+          <span style={{ fontWeight: 900, fontSize: 15 }}>{value}</span>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -150,6 +103,7 @@ export default function ClientManager({ clients, onBack, onSave }) {
   const [form, setForm] = useState(emptyClientForm());
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyClientForm());
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const updateForm = (setter) => (key, value) => {
     setter((prev) => ({ ...prev, [key]: value }));
@@ -170,6 +124,7 @@ export default function ClientManager({ clients, onBack, onSave }) {
     }
     onSave([...clients, normalizeClient({ ...form, name, id: Date.now() })]);
     setForm(emptyClientForm());
+    setShowAddForm(false);
   };
 
   const startEdit = (client) => {
@@ -212,43 +167,46 @@ export default function ClientManager({ clients, onBack, onSave }) {
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>元請管理</h1>
-      <p style={s.sub}>元請ごとの単価・原価・外注・利益設定</p>
 
-      <section style={s.listCard}>
-        <h2 style={s.sectionTitle}>新規元請</h2>
-        <div style={s.form}>
-          <ClientSettingsForm form={form} setField={setFormField} />
-        </div>
-        <button style={s.save} onClick={handleAdd}>追加する</button>
-      </section>
+      {!showAddForm ? (
+        <button style={s.btnPrimary} onClick={() => setShowAddForm(true)}>
+          ＋ 元請を追加
+        </button>
+      ) : (
+        <section style={s.listCard}>
+          <h2 style={s.sectionTitle}>新規元請</h2>
+          <div style={s.form}>
+            <ClientSettingsForm form={form} setField={setFormField} />
+          </div>
+          <div style={s.rowActions}>
+            <button style={s.save} onClick={handleAdd}>追加</button>
+            <button style={s.secondary} onClick={() => setShowAddForm(false)}>キャンセル</button>
+          </div>
+        </section>
+      )}
 
       {clients.length === 0 ? (
-        <p style={s.muted}>まだ元請が未登録です。</p>
+        <p style={{ ...s.muted, marginTop: 20 }}>まだ元請が未登録です。</p>
       ) : (
         clients.map((client) => (
           <section key={client.id} style={s.listCard}>
             {editingId === client.id ? (
               <>
-                <h2 style={s.sectionTitle}>編集</h2>
+                <h2 style={s.sectionTitle}>{client.name}</h2>
                 <div style={s.form}>
                   <ClientSettingsForm form={editForm} setField={setEditField} />
                 </div>
                 <div style={s.rowActions}>
-                  <button
-                    style={{ ...s.save, width: "auto", flex: "1 1 120px", marginTop: 0 }}
-                    onClick={handleUpdate}
-                  >
-                    保存
-                  </button>
+                  <button style={s.save} onClick={handleUpdate}>保存</button>
                   <button style={s.secondary} onClick={cancelEdit}>キャンセル</button>
                 </div>
               </>
             ) : (
               <>
-                <h2 style={s.sectionTitle}>{client.name}</h2>
+                <h2 style={{ ...s.sectionTitle, marginBottom: 16 }}>{client.name}</h2>
                 <ClientFieldList client={client} />
-                <div style={s.rowActions}>
-                  <button style={s.secondary} onClick={() => startEdit(client)}>編集</button>
+                <div style={{ ...s.rowActions, marginTop: 16 }}>
+                  <button style={s.editBtn} onClick={() => startEdit(client)}>編集</button>
                   <button style={s.delete} onClick={() => handleDelete(client)}>削除</button>
                 </div>
               </>

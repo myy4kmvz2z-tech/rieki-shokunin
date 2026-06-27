@@ -10,22 +10,18 @@ import {
 import {
   calcEstimateTotals,
   calcProfitSimulator,
-  formatCostDisplay,
-  formatOutsourcingDisplay,
-  formatSalesDisplay,
   getCostStructureForClient,
   getProfitImprovementAdvice,
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
 import {
-  calcDistanceTransport,
   getInitialTransportState,
   TRANSPORT_MODES,
   TRIP_TYPES,
 } from "../utils/calcTransport";
 import { s } from "../lib/styles";
-import { Input, Select } from "./FormFields";
+import { Collapsible, Input, ReadOnlyStat, Select } from "./FormFields";
 
 function getStandardLaborUnitPrice(company, fromClient) {
   return Number(
@@ -234,7 +230,6 @@ export default function EstimateForm({
     fixedTransport,
     parkingFee,
   });
-  const recommendedSellingUnitPrice = totals.recommendedSellingUnitPrice;
   const profitSimulator = calcProfitSimulator({
     totalCost: totals.cost,
     area,
@@ -249,19 +244,6 @@ export default function EstimateForm({
     discount: totals.discount,
   });
   const profitRateBand = getProfitRateColorBand(totals.rate);
-  const distanceTransportPreview = calcDistanceTransport({ distanceKm, kmRate, tripType });
-  const transportPreviewLabel =
-    transportMode === "distance"
-      ? `${distanceKm}km × ¥${kmRate}/km（${tripType === "roundTrip" ? "往復" : "片道"}）= ${yen(distanceTransportPreview)}`
-      : `固定 ${yen(fixedTransport)}`;
-  const outsourcingPreview = formatOutsourcingDisplay({
-    outsourcingMode: totals.outsourcingMode,
-    laborCount: totals.laborCount,
-    laborUnitPrice: totals.laborUnitPrice,
-    outsourcingSqmUnitPrice: totals.outsourcingSqmUnitPrice,
-    area,
-    labor: totals.labor,
-  });
   const showDirectLaborInput =
     (outsourcingMode === "labor" && Number(laborCount || 0) <= 0) ||
     (outsourcingMode === "sqm" && Number(outsourcingSqmUnitPrice || 0) <= 0);
@@ -318,224 +300,194 @@ export default function EstimateForm({
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>{editing ? "見積編集" : "見積作成"}</h1>
 
-      <div style={s.form}>
+      <section style={s.blockSection}>
+        <h2 style={s.blockTitle}>1. 現場</h2>
         <Input label="現場名" value={siteName} setValue={setSiteName} />
         <Select label="元請" value={client} setValue={setClient} options={clientOptions} />
-        <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-        <p style={s.hint}>元請を選ぶと外注方式・原価・希望利益率の標準値が自動入力されます</p>
-      </div>
-
-      <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>① 原価</h2>
-        <Input label="材料費 円/㎡" value={material} setValue={setMaterial} type="number" />
-        <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
-        <Input label="下地処理費用 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
-        <Input label="副資材 円/㎡" value={auxiliary} setValue={setAuxiliary} type="number" />
-        <Input label="廃材処分費用 円/㎡" value={waste} setValue={setWaste} type="number" />
-
-        <hr style={s.blockDivider} />
-
-        <Select
-          label="外注費方式"
-          value={outsourcingMode}
-          setValue={setOutsourcingMode}
-          options={OUTSOURCING_MODES}
-        />
-        {outsourcingMode === "labor" ? (
-          <>
-            <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
-            <Input
-              label="常用単価 円/人工"
-              value={laborUnitPrice}
-              setValue={setLaborUnitPrice}
-              type="number"
-            />
-          </>
-        ) : (
-          <Input
-            label="請負単価 円/㎡"
-            value={outsourcingSqmUnitPrice}
-            setValue={setOutsourcingSqmUnitPrice}
-            type="number"
-          />
-        )}
-        <p style={s.hint}>{outsourcingPreview}</p>
-        {showDirectLaborInput && (
-          <Input
-            label="外注費（直接入力） 円"
-            value={directLabor}
-            setValue={setDirectLabor}
-            type="number"
-          />
-        )}
-
-        <hr style={s.blockDivider} />
-
-        <Select
-          label="交通費方式"
-          value={transportMode}
-          setValue={setTransportMode}
-          options={TRANSPORT_MODES}
-        />
-        {transportMode === "distance" ? (
-          <>
-            <Input label="距離 km" value={distanceKm} setValue={setDistanceKm} type="number" />
-            <Select label="片道/往復" value={tripType} setValue={setTripType} options={TRIP_TYPES} />
-            <Input label="1km単価 円/km" value={kmRate} setValue={setKmRate} type="number" />
-          </>
-        ) : (
-          <Input label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
-        )}
-        <p style={s.hint}>交通費 {yen(totals.transportCost)}（{transportPreviewLabel}）</p>
-        <Input label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
       </section>
 
       <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>② 売価</h2>
+        <h2 style={s.blockTitle}>2. 原価</h2>
+        <Input label="材料費 円/㎡" value={material} setValue={setMaterial} type="number" />
+        <Input label="下地処理 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
+        <Input label="副資材 円/㎡" value={auxiliary} setValue={setAuxiliary} type="number" />
+        <Input label="廃材処分 円/㎡" value={waste} setValue={setWaste} type="number" />
+
+        <div>
+          <p style={s.resultLabel}>外注費</p>
+          <p style={s.readOnlyValue}>{yen(totals.labor)}</p>
+        </div>
+
+        <div>
+          <p style={s.resultLabel}>交通費</p>
+          <p style={s.readOnlyValue}>{yen(totals.transportCost)}</p>
+        </div>
+
+        <Input label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
+
+        <Collapsible label="外注費・交通費の設定">
+          <Select
+            label="外注費方式"
+            value={outsourcingMode}
+            setValue={setOutsourcingMode}
+            options={OUTSOURCING_MODES}
+          />
+          {outsourcingMode === "labor" ? (
+            <>
+              <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
+              <Input
+                label="常用単価 円/人工"
+                value={laborUnitPrice}
+                setValue={setLaborUnitPrice}
+                type="number"
+              />
+            </>
+          ) : (
+            <Input
+              label="請負単価 円/㎡"
+              value={outsourcingSqmUnitPrice}
+              setValue={setOutsourcingSqmUnitPrice}
+              type="number"
+            />
+          )}
+          {showDirectLaborInput && (
+            <Input
+              label="外注費（直接入力） 円"
+              value={directLabor}
+              setValue={setDirectLabor}
+              type="number"
+            />
+          )}
+          <Select
+            label="交通費方式"
+            value={transportMode}
+            setValue={setTransportMode}
+            options={TRANSPORT_MODES}
+          />
+          {transportMode === "distance" ? (
+            <>
+              <Input label="距離 km" value={distanceKm} setValue={setDistanceKm} type="number" />
+              <Select label="片道/往復" value={tripType} setValue={setTripType} options={TRIP_TYPES} />
+              <Input label="1km単価 円/km" value={kmRate} setValue={setKmRate} type="number" />
+            </>
+          ) : (
+            <Input label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
+          )}
+          <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
+          <Input label="現場住所（任意）" value={siteAddress} setValue={setSiteAddress} />
+        </Collapsible>
+      </section>
+
+      <section style={s.blockSection}>
+        <h2 style={s.blockTitle}>3. 売価</h2>
         <Input
           label="販売単価 円/㎡"
           value={sellingUnitPrice}
           setValue={setSellingUnitPrice}
           type="number"
         />
-        <p style={s.hint}>未入力なら原価単価 + 貼り手間（{yen(recommendedSellingUnitPrice)}/㎡）で計算します</p>
-        {totals.usesRecommendedSellingUnitPrice && (
-          <p style={s.hint}>販売単価未入力のため、原価単価 + 貼り手間を使用中</p>
-        )}
         <Input label="値引き 円" value={discount} setValue={setDiscount} type="number" />
-
-        <hr style={s.blockDivider} />
-
-        <h3 style={{ ...s.blockTitle, fontSize: 14 }}>利益シミュレーター</h3>
-        <p style={s.hint}>利益を残すにはいくらで見積を出せばいいかを逆算します</p>
         <Input
-          label="希望利益率 %"
+          label="目標利益率 %"
           value={targetProfitRate}
           setValue={setTargetProfitRate}
           type="number"
         />
-        <Input
-          label="希望利益額 円（任意）"
-          value={desiredProfitAmount}
-          setValue={setDesiredProfitAmount}
-          type="number"
-        />
 
-        <div style={s.result}>
-          <p style={{ ...s.muted, margin: "0 0 8px", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
-          <p style={s.resultLabel}>原価合計</p>
-          <p style={s.resultDetail}>{yen(profitSimulator.totalCost)}</p>
-          <p style={s.resultLabel}>希望利益率</p>
-          <p style={s.resultDetail}>{Number(profitSimulator.desiredProfitRate || 0)}%</p>
-          <p style={s.resultLabel}>希望利益額</p>
-          <p style={s.resultDetail}>
-            {profitSimulator.desiredProfitAmount > 0
-              ? yen(profitSimulator.desiredProfitAmount)
-              : "—（未入力）"}
-          </p>
-          <p style={{ ...s.muted, margin: "8px 0", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
-          <p style={s.resultLabel}>推奨販売単価</p>
-          <p style={{ ...s.resultDetail, color: "#fff", fontWeight: 900, fontSize: 18 }}>
-            {profitSimulator.canCalculate
-              ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
-              : "—"}
-          </p>
-          <p style={{ ...s.muted, margin: "8px 0 0", fontSize: 12, letterSpacing: 2 }}>━━━━━━━━━━━━━━</p>
-          {profitSimulator.message && (
-            <p style={{ ...s.hint, marginTop: 12, color: "#ff8a00" }}>{profitSimulator.message}</p>
-          )}
-        </div>
-
-        <button
-          type="button"
-          style={{ ...s.secondary, width: "100%" }}
-          disabled={!profitSimulator.canCalculate}
-          onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
-        >
-          推奨販売単価を販売単価へ反映
-        </button>
+        <Collapsible label="利益シミュレーター">
+          <Input
+            label="希望利益率 %"
+            value={targetProfitRate}
+            setValue={setTargetProfitRate}
+            type="number"
+          />
+          <Input
+            label="希望利益額 円"
+            value={desiredProfitAmount}
+            setValue={setDesiredProfitAmount}
+            type="number"
+          />
+          <div style={s.result}>
+            <p style={s.resultLabel}>原価合計</p>
+            <p style={s.statValue}>{yen(profitSimulator.totalCost)}</p>
+            <p style={{ ...s.resultLabel, marginTop: 12 }}>推奨販売単価</p>
+            <p style={s.statValue}>
+              {profitSimulator.canCalculate
+                ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
+                : "—"}
+            </p>
+            {profitSimulator.message && (
+              <p style={{ ...s.hint, marginTop: 12, color: "#ff8a00" }}>{profitSimulator.message}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            style={{ ...s.secondary, width: "100%" }}
+            disabled={!profitSimulator.canCalculate}
+            onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+          >
+            推奨販売単価を販売単価へ反映
+          </button>
+        </Collapsible>
       </section>
 
       <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>③ 結果</h2>
+        <h2 style={s.blockTitle}>4. 結果</h2>
+        <div style={s.statGrid}>
+          <ReadOnlyStat label="売上" value={yen(totals.sales)} />
+          <ReadOnlyStat label="原価" value={yen(totals.cost)} />
+          <ReadOnlyStat
+            label="利益"
+            value={yen(totals.profit)}
+            color={totals.profit >= 0 ? "#fff" : "#ef4444"}
+          />
+          <ReadOnlyStat
+            label="利益率"
+            value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
+            color={totals.sales > 0 ? profitRateBand.color : "#888"}
+          />
+        </div>
+        <div style={{ ...s.statItem, marginTop: 4 }}>
+          <p style={s.resultLabel}>判定</p>
+          <p
+            style={{
+              ...s.statValue,
+              fontSize: 18,
+              color: totals.sales > 0 ? profitAdvice.color : "#888",
+            }}
+          >
+            {totals.sales > 0
+              ? `${profitAdvice.icon} ${profitAdvice.message}`
+              : "—"}
+          </p>
+        </div>
 
-        <p style={s.resultLabel}>売上</p>
-        <p style={s.resultDetail}>
-          {formatSalesDisplay({
-            area,
-            effectiveSellingUnitPrice: totals.effectiveSellingUnitPrice,
-            discount: totals.discount,
-            sales: totals.sales,
-          })}
-        </p>
-
-        <p style={s.resultLabel}>原価</p>
-        <p style={s.resultDetail}>
-          {formatCostDisplay({
-            area,
-            costUnitPrice: totals.costUnitPrice,
-            outsourcingMode: totals.outsourcingMode,
-            laborCount: totals.laborCount,
-            laborUnitPrice: totals.laborUnitPrice,
-            outsourcingSqmUnitPrice: totals.outsourcingSqmUnitPrice,
-            labor: totals.labor,
-            transportCost: totals.transportCost,
-            parkingFee: totals.parkingFee,
-            cost: totals.cost,
-          })}
-        </p>
-
-        <p style={s.resultLabel}>利益</p>
-        <p style={{ ...s.resultDetail, color: totals.profit >= 0 ? "#fff" : "#ef4444" }}>
-          {yen(totals.profit)}
-        </p>
-
-        <p style={s.resultLabel}>利益率</p>
-        <p
-          style={{
-            ...s.resultDetail,
-            color: totals.sales > 0 ? profitRateBand.color : "#888",
-            fontWeight: 900,
-          }}
-        >
-          {totals.sales > 0
-            ? `${profitRateBand.icon} ${Number(totals.rate || 0).toFixed(1)}%（${profitRateBand.label}）`
-            : "—（売上が0のため計算不可）"}
-        </p>
-
-        <hr style={s.blockDivider} />
-
-        <p style={s.resultLabel}>利益改善アドバイス</p>
-        {totals.sales > 0 && totals.cost >= 0 ? (
-          <>
-            <p
-              style={{
-                ...s.resultDetail,
-                color: profitAdvice.color,
-                fontWeight: 900,
-              }}
-            >
-              {profitAdvice.icon} {profitAdvice.message}
-            </p>
-            {profitAdvice.improvementMessage && (
-              <p style={{ ...s.resultDetail, marginTop: 8, lineHeight: 1.7 }}>
-                {profitAdvice.improvementMessage}
+        <Collapsible label="利益改善アドバイス">
+          {totals.sales > 0 ? (
+            <>
+              <p style={{ ...s.resultDetail, color: profitAdvice.color, fontWeight: 900 }}>
+                {profitAdvice.icon} {profitAdvice.message}
               </p>
-            )}
-          </>
-        ) : (
-          <p style={s.resultDetail}>—（売上・原価を確認してください）</p>
-        )}
+              {profitAdvice.improvementMessage && (
+                <p style={{ ...s.resultDetail, marginTop: 8, lineHeight: 1.7 }}>
+                  {profitAdvice.improvementMessage}
+                </p>
+              )}
+            </>
+          ) : (
+            <p style={s.resultDetail}>売上を入力してください。</p>
+          )}
+        </Collapsible>
       </section>
 
       <div style={s.formActions}>
-        <button style={s.pdf} onClick={() => onPdf(buildEstimate())}>
-          見積書を印刷
-        </button>
         <button style={s.save} onClick={() => onSave(buildEstimate())}>
-          {editing ? "上書き保存" : "保存する"}
+          {editing ? "保存" : "保存する"}
+        </button>
+        <button style={s.pdf} onClick={() => onPdf(buildEstimate())}>
+          印刷
         </button>
       </div>
     </main>

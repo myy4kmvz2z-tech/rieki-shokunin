@@ -1,84 +1,56 @@
 import {
-  formatCostDisplay,
-  formatCostExtrasDisplay,
-  formatOutsourcingDisplay,
-  formatProfitRateJudgment,
-  formatSalesDisplay,
   getEstimateDisplayTotals,
-  getOutsourcingModeLabel,
-  getTargetProfitRate,
+  getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { getTransportDetailLabel, getTransportModeLabel } from "../utils/calcTransport";
 import { s } from "../lib/styles";
 
-function CostExtrasSummary({ estimate }) {
-  const display = getEstimateDisplayTotals(estimate);
-
-  return (
-    <>
-      <p style={s.muted}>
-        外注費方式 {getOutsourcingModeLabel(display.outsourcingMode)} ·{" "}
-        {formatOutsourcingDisplay(display)}
-      </p>
-      <p style={s.muted}>現場原価 {formatCostExtrasDisplay(display)}</p>
-      <p style={s.muted}>
-        交通費方式 {getTransportModeLabel(estimate)} · {getTransportDetailLabel(estimate)}
-      </p>
-    </>
-  );
-}
-
-function EstimateSummary({ estimate }) {
-  const display = getEstimateDisplayTotals(estimate);
-
-  return (
-    <>
-      <p style={{ ...s.muted, margin: "8px 0 0", whiteSpace: "pre-line", lineHeight: 1.6 }}>
-        売上{"\n"}
-        {formatSalesDisplay(display)}
-      </p>
-      <p style={{ ...s.muted, margin: "8px 0 0", whiteSpace: "pre-line", lineHeight: 1.6 }}>
-        原価{"\n"}
-        {formatCostDisplay(display)}
-      </p>
-      <p style={{ margin: "8px 0 0" }}>
-        利益 {yen(display.profit)} / {formatProfitRateJudgment(display.rate)} / 目標 {getTargetProfitRate(estimate)}%
-      </p>
-    </>
-  );
-}
-
-export default function EstimateList({ estimates, onBack, onDelete, onEdit, onPdf }) {
+export default function EstimateList({ estimates, onBack, onEdit, onPdf }) {
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>見積一覧</h1>
 
       {estimates.length === 0 ? (
-        <p>まだ保存はありません。</p>
+        <p style={s.muted}>保存済みの見積はありません。</p>
       ) : (
-        estimates.map((e) => (
-          <section key={e.id} style={s.listCard}>
-            <h2 style={s.sectionTitle}>{e.siteName}</h2>
-            <p style={s.muted}>{e.client} · {e.workType}</p>
-            {e.siteAddress && <p style={s.muted}>住所 {e.siteAddress}</p>}
-            <CostExtrasSummary estimate={e} />
-            <EstimateSummary estimate={e} />
-            <small style={s.muted}>{e.createdAt}</small>
-            <div style={s.rowActions}>
-              <button style={s.secondary} onClick={() => onEdit(e.id)}>
-                編集
-              </button>
-              <button style={s.pdf} onClick={() => onPdf(e)}>
-                印刷
-              </button>
-              <button style={s.delete} onClick={() => onDelete(e.id)}>
-                削除
-              </button>
-            </div>
-          </section>
-        ))
+        estimates.map((e) => {
+          const display = getEstimateDisplayTotals(e);
+          const band = getProfitRateColorBand(display.rate);
+
+          return (
+            <section key={e.id} style={s.listCard}>
+              <h2 style={{ ...s.sectionTitle, marginBottom: 8 }}>{e.siteName}</h2>
+              <p style={s.listMeta}>{e.client}</p>
+
+              <div style={s.listStats}>
+                <div style={s.listStat}>
+                  <p style={s.listStatLabel}>売上</p>
+                  <p style={s.listStatValue}>{yen(display.sales)}</p>
+                </div>
+                <div style={s.listStat}>
+                  <p style={s.listStatLabel}>利益</p>
+                  <p style={s.listStatValue}>{yen(display.profit)}</p>
+                </div>
+                <div style={s.listStat}>
+                  <p style={s.listStatLabel}>利益率</p>
+                  <p style={{ ...s.listStatValue, color: band.color }}>
+                    {display.sales > 0 ? `${Number(display.rate || 0).toFixed(1)}%` : "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div style={s.rowActions}>
+                <button style={s.editBtn} onClick={() => onEdit(e.id)}>
+                  編集
+                </button>
+                <button style={s.pdf} onClick={() => onPdf(e)}>
+                  印刷
+                </button>
+              </div>
+            </section>
+          );
+        })
       )}
     </main>
   );

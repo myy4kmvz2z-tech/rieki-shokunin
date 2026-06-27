@@ -82,3 +82,21 @@ export function Select({ label, value, setValue, options }) {
     </label>
   );
 }
+
+export function Collapsible({ label, children }) {
+  return (
+    <details style={s.details}>
+      <summary style={s.detailsSummary}>{label}</summary>
+      <div style={s.detailsBody}>{children}</div>
+    </details>
+  );
+}
+
+export function ReadOnlyStat({ label, value, color }) {
+  return (
+    <div style={s.statItem}>
+      <p style={s.resultLabel}>{label}</p>
+      <p style={{ ...s.statValue, color: color || "#fff" }}>{value}</p>
+    </div>
+  );
+}

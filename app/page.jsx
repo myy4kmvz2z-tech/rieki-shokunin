@@ -99,9 +99,6 @@ export default function Page() {
       <EstimateList
         estimates={estimates}
         onBack={() => setScreen("home")}
-        onDelete={(id) => {
-          saveAll(estimates.filter((e) => e.id !== id));
-        }}
         onEdit={(id) => {
           setEditingId(id);
           setScreen("edit");
@@ -144,28 +141,21 @@ export default function Page() {
   } else {
     content = (
       <main style={s.page}>
-        <p style={s.kicker}>職人のための見積・利益管理</p>
-        <h1 style={s.title}>利益職人</h1>
-        <p style={s.sub}>販売前β</p>
-
+        <p style={s.kicker}>利益職人</p>
         <Dashboard estimates={estimates} />
-
         <nav style={s.menuGroup}>
-          <p style={s.menuLabel}>見積</p>
-          <button style={s.btn} onClick={() => setScreen("new")}>＋ 見積を作成</button>
-          <button style={s.btn} onClick={() => setScreen("list")}>📂 保存済み見積</button>
-        </nav>
-
-        <nav style={s.menuGroup}>
-          <p style={s.menuLabel}>帳票</p>
-          <button style={s.btn} onClick={() => setScreen("pdf")}>📄 見積書を印刷</button>
-          <button style={s.btn} onClick={() => setScreen("invoice")}>🧾 請求書を印刷</button>
-        </nav>
-
-        <nav style={s.menuGroup}>
-          <p style={s.menuLabel}>設定</p>
-          <button style={s.btn} onClick={() => setScreen("clients")}>👥 元請管理</button>
-          <button style={s.btn} onClick={() => setScreen("settings")}>⚙️ 会社設定</button>
+          <button style={s.btnPrimary} onClick={() => setScreen("new")}>
+            見積を作る
+          </button>
+          <button style={s.btn} onClick={() => setScreen("list")}>
+            見積一覧
+          </button>
+          <button style={s.btn} onClick={() => setScreen("clients")}>
+            元請管理
+          </button>
+          <button style={s.btn} onClick={() => setScreen("settings")}>
+            会社設定
+          </button>
         </nav>
       </main>
     );
