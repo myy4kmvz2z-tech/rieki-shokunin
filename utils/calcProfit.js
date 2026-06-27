@@ -1,4 +1,4 @@
-import { WORK_TYPES, WORK_TYPE_FIELD, DEFAULT_LABOR_UNIT_PRICE, DEFAULT_TARGET_PROFIT_RATE } from "../lib/constants";
+import { WORK_TYPES, WORK_TYPE_FIELD, DEFAULT_LABOR_UNIT_PRICE, DEFAULT_OUTSOURCING_MODE, DEFAULT_TARGET_PROFIT_RATE } from "../lib/constants";
 import {
   calcTransportTotal,
   getTransportDetailLabel,
@@ -88,7 +88,7 @@ export function calcOutsourcingCost({
 }
 
 export function getOutsourcingModeLabel(outsourcingMode) {
-  return outsourcingMode === "sqm" ? "請負単価（㎡単価）" : "常用単価（1人工）";
+  return outsourcingMode === "sqm" ? "請負単価（㎡）" : "常用単価（1人工）";
 }
 
 export function normalizeEstimateOutsourcing(
@@ -141,12 +141,12 @@ export function formatOutsourcingDisplay({
     const sqm = Number(area || 0);
     const price = Number(outsourcingSqmUnitPrice || 0);
     if (price > 0 && sqm > 0) {
-      return `${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
+      return `${sqm}㎡ × 請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
     }
     if (amount > 0) {
       return `外注費 ${yen(amount)}`;
     }
-    return `${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
+    return `${sqm}㎡ × 請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
   }
 
   const count = Number(laborCount || 0);
@@ -168,7 +168,7 @@ export function formatOutsourcingCostLine(params) {
     const sqm = Number(params.area || 0);
     const price = Number(params.outsourcingSqmUnitPrice || 0);
     if (price > 0 && sqm > 0) {
-      return `+ ${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
+      return `+ ${sqm}㎡ × 請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
     }
     return `+ 外注費 ${yen(amount)}`;
   }
@@ -319,6 +319,7 @@ export function getCostStructureForClient(clients, clientName, workType) {
       transport: 0,
       standardLaborUnitPrice: DEFAULT_LABOR_UNIT_PRICE,
       standardOutsourcingSqmUnitPrice: 0,
+      standardOutsourcingMode: DEFAULT_OUTSOURCING_MODE,
       standardTargetProfitRate: DEFAULT_TARGET_PROFIT_RATE,
     };
   }
@@ -332,6 +333,8 @@ export function getCostStructureForClient(clients, clientName, workType) {
     transport: Number(c.transport ?? 0),
     standardLaborUnitPrice: Number(c.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE),
     standardOutsourcingSqmUnitPrice: Number(c.standardOutsourcingSqmUnitPrice ?? 0),
+    standardOutsourcingMode:
+      c.standardOutsourcingMode === "sqm" ? "sqm" : "labor",
     standardTargetProfitRate: Number(c.standardTargetProfitRate ?? DEFAULT_TARGET_PROFIT_RATE),
   };
 }

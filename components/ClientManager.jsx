@@ -5,13 +5,20 @@ import {
   COST_UNIT_FIELDS,
   emptyClientForm,
   normalizeClient,
-  OUTSOURCING_SETTING_FIELDS,
+  OUTSOURCING_MODES,
   PRICE_FIELDS,
   PROFIT_SETTING_FIELDS,
 } from "../lib/constants";
-import { yen } from "../utils/calcProfit";
+import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
-import { Input } from "./FormFields";
+import { Input, Select } from "./FormFields";
+
+const outsourcingSubSection = {
+  ...s.muted,
+  margin: "8px 0 4px",
+  fontSize: 12,
+  fontWeight: 900,
+};
 
 function ClientSettingsForm({ form, setField }) {
   return (
@@ -45,17 +52,27 @@ function ClientSettingsForm({ form, setField }) {
       </div>
 
       <p style={s.formSection}>外注設定</p>
-      <div style={s.priceGrid}>
-        {OUTSOURCING_SETTING_FIELDS.map(({ key, label }) => (
-          <Input
-            key={key}
-            label={label}
-            value={form[key]}
-            setValue={(v) => setField(key, v)}
-            type="number"
-          />
-        ))}
-      </div>
+      <p style={outsourcingSubSection}>① 常用単価（1人工）</p>
+      <Input
+        label="標準常用単価 円/人工"
+        value={form.standardLaborUnitPrice}
+        setValue={(v) => setField("standardLaborUnitPrice", v)}
+        type="number"
+      />
+      <p style={outsourcingSubSection}>② 請負単価（㎡）</p>
+      <Input
+        label="標準請負単価 円/㎡"
+        value={form.standardOutsourcingSqmUnitPrice}
+        setValue={(v) => setField("standardOutsourcingSqmUnitPrice", v)}
+        type="number"
+      />
+      <p style={outsourcingSubSection}>③ 標準外注方式</p>
+      <Select
+        label="標準外注方式"
+        value={form.standardOutsourcingMode}
+        setValue={(v) => setField("standardOutsourcingMode", v)}
+        options={OUTSOURCING_MODES}
+      />
 
       <p style={s.formSection}>利益設定</p>
       <div style={s.priceGrid}>
@@ -98,12 +115,18 @@ function ClientFieldList({ client }) {
 
       <p style={{ ...s.muted, margin: "12px 0 8px", fontSize: 13, fontWeight: 900 }}>外注設定</p>
       <div style={s.priceList}>
-        {OUTSOURCING_SETTING_FIELDS.map(({ key, label }) => (
-          <p key={key} style={s.priceRow}>
-            <span style={s.muted}>{label}</span>
-            <span>{yen(client[key])}</span>
-          </p>
-        ))}
+        <p style={s.priceRow}>
+          <span style={s.muted}>① 標準常用単価 円/人工</span>
+          <span>{yen(client.standardLaborUnitPrice)}</span>
+        </p>
+        <p style={s.priceRow}>
+          <span style={s.muted}>② 標準請負単価 円/㎡</span>
+          <span>{yen(client.standardOutsourcingSqmUnitPrice)}</span>
+        </p>
+        <p style={s.priceRow}>
+          <span style={s.muted}>③ 標準外注方式</span>
+          <span>{getOutsourcingModeLabel(client.standardOutsourcingMode)}</span>
+        </p>
       </div>
 
       <p style={{ ...s.muted, margin: "12px 0 8px", fontSize: 13, fontWeight: 900 }}>利益設定</p>

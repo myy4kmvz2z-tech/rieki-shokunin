@@ -35,7 +35,12 @@ function getStandardLaborUnitPrice(company, fromClient) {
 
 function getInitialOutsourcingState(initialEstimate, fromClient, company) {
   const standardLaborUnitPrice = getStandardLaborUnitPrice(company, fromClient);
-  const outsourcingMode = initialEstimate?.outsourcingMode === "sqm" ? "sqm" : "labor";
+  const outsourcingMode =
+    initialEstimate?.outsourcingMode === "sqm" || initialEstimate?.outsourcingMode === "labor"
+      ? initialEstimate.outsourcingMode
+      : fromClient?.standardOutsourcingMode === "sqm"
+        ? "sqm"
+        : "labor";
   const laborCount = Number(initialEstimate?.laborCount ?? 0);
   const laborUnitPrice = Number(
     initialEstimate?.laborUnitPrice ?? fromClient?.standardLaborUnitPrice ?? standardLaborUnitPrice
@@ -112,6 +117,7 @@ function syncFromClient(fromClient) {
     substrate: fromClient.substrate,
     auxiliary: fromClient.auxiliary,
     waste: fromClient.waste,
+    outsourcingMode: fromClient.standardOutsourcingMode === "sqm" ? "sqm" : "labor",
     laborUnitPrice: fromClient.standardLaborUnitPrice,
     outsourcingSqmUnitPrice: fromClient.standardOutsourcingSqmUnitPrice,
     targetProfitRate: fromClient.standardTargetProfitRate,
@@ -192,6 +198,7 @@ export default function EstimateForm({
     setSubstrate(synced.substrate);
     setAuxiliary(synced.auxiliary);
     setWaste(synced.waste);
+    setOutsourcingMode(synced.outsourcingMode);
     setLaborUnitPrice(synced.laborUnitPrice);
     setOutsourcingSqmUnitPrice(synced.outsourcingSqmUnitPrice);
     setTargetProfitRate(synced.targetProfitRate);
@@ -298,7 +305,7 @@ export default function EstimateForm({
         <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-        <p style={s.hint}>元請を選ぶと原価・外注・目標利益率の標準値が自動入力されます</p>
+        <p style={s.hint}>元請を選ぶと外注方式・原価・目標利益率の標準値が自動入力されます</p>
       </div>
 
       <section style={s.blockSection}>
@@ -329,7 +336,7 @@ export default function EstimateForm({
           </>
         ) : (
           <Input
-            label="外注請負単価 円/㎡"
+            label="請負単価 円/㎡"
             value={outsourcingSqmUnitPrice}
             setValue={setOutsourcingSqmUnitPrice}
             type="number"
