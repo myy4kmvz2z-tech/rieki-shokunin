@@ -114,11 +114,6 @@ export default function SiteTransportSection({
       <p style={apiStatus ? s.gpsApiNotice : s.gpsApiReady}>
         {apiStatus || "APIキー設定済み（自動距離は将来対応）"}
       </p>
-
-      <p style={s.gpsSummaryRow}>
-        <span>距離</span>
-        <span>{Number(distanceKm || 0)} km</span>
-      </p>
     </div>
   );
 }

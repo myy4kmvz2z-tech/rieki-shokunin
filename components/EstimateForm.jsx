@@ -555,6 +555,13 @@ export default function EstimateForm({
               }}
               onDistanceChange={setDistanceKm}
             />
+            <Input
+              large
+              label="距離 km"
+              value={distanceKm}
+              setValue={setDistanceKm}
+              type="number"
+            />
             <CardButtonGroup
               label="片道 / 往復"
               value={tripType}

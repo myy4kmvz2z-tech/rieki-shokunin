@@ -111,7 +111,7 @@ export function formatTransportFuelSummary({
     vehicleLine: String(vehicleName || DEFAULT_VEHICLE_NAME),
     fuelLine: `${fuel}km/L`,
     gasLine: `ガソリン ${gasPrice.toLocaleString()}円/L`,
-    distanceLine: `距離 ${distance}km ${trip}`,
+    distanceLine: `距離 ${distance.toLocaleString()}km ${trip}`,
     costLine: `交通費 ${cost.toLocaleString()}円`,
   };
 }
