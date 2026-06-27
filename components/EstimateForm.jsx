@@ -14,6 +14,7 @@ import {
   formatOutsourcingDisplay,
   formatSalesDisplay,
   getCostStructureForClient,
+  getProfitImprovementAdvice,
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
@@ -239,6 +240,13 @@ export default function EstimateForm({
     area,
     desiredProfitRate: targetProfitRate,
     desiredProfitAmount,
+  });
+  const profitAdvice = getProfitImprovementAdvice({
+    rate: totals.rate,
+    totalCost: totals.cost,
+    area,
+    effectiveSellingUnitPrice: totals.effectiveSellingUnitPrice,
+    discount: totals.discount,
   });
   const profitRateBand = getProfitRateColorBand(totals.rate);
   const distanceTransportPreview = calcDistanceTransport({ distanceKm, kmRate, tripType });
@@ -496,6 +504,30 @@ export default function EstimateForm({
             ? `${profitRateBand.icon} ${Number(totals.rate || 0).toFixed(1)}%（${profitRateBand.label}）`
             : "—（売上が0のため計算不可）"}
         </p>
+
+        <hr style={s.blockDivider} />
+
+        <p style={s.resultLabel}>利益改善アドバイス</p>
+        {totals.sales > 0 && totals.cost >= 0 ? (
+          <>
+            <p
+              style={{
+                ...s.resultDetail,
+                color: profitAdvice.color,
+                fontWeight: 900,
+              }}
+            >
+              {profitAdvice.icon} {profitAdvice.message}
+            </p>
+            {profitAdvice.improvementMessage && (
+              <p style={{ ...s.resultDetail, marginTop: 8, lineHeight: 1.7 }}>
+                {profitAdvice.improvementMessage}
+              </p>
+            )}
+          </>
+        ) : (
+          <p style={s.resultDetail}>—（売上・原価を確認してください）</p>
+        )}
       </section>
 
       <div style={s.formActions}>

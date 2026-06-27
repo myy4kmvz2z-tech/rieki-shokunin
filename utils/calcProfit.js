@@ -357,6 +357,55 @@ export function getProfitRateColorBand(rate) {
   return { icon: "🔴", label: "10%未満", color: "#ef4444" };
 }
 
+export function getProfitImprovementAdvice({
+  rate,
+  totalCost,
+  area,
+  effectiveSellingUnitPrice,
+  discount,
+  targetProfitRate = PROFIT_RATE_GOOD_THRESHOLD,
+}) {
+  const value = Number(rate || 0);
+  const sqm = Number(area || 0);
+  const cost = Number(totalCost || 0);
+  const currentPrice = Number(effectiveSellingUnitPrice || 0);
+  const disc = Number(discount || 0);
+  const target = Number(targetProfitRate ?? PROFIT_RATE_GOOD_THRESHOLD);
+
+  let icon;
+  let message;
+  let color;
+
+  if (value >= PROFIT_RATE_GOOD_THRESHOLD) {
+    icon = "🟢";
+    message = "目標利益率を達成しています。";
+    color = "#22c55e";
+  } else if (value >= PROFIT_RATE_WARNING_THRESHOLD) {
+    icon = "🟡";
+    message = "利益率が少し低めです。";
+    color = "#eab308";
+  } else {
+    icon = "🔴";
+    message = "利益率が低すぎます。";
+    color = "#ef4444";
+  }
+
+  let unitPriceIncrease = null;
+  let improvementMessage = null;
+
+  if (value < target && sqm > 0 && target < 100) {
+    const requiredSales = cost / (1 - target / 100);
+    const requiredUnitPrice = (requiredSales + disc) / sqm;
+    const increase = Math.ceil(requiredUnitPrice - currentPrice);
+    if (increase > 0) {
+      unitPriceIncrease = increase;
+      improvementMessage = `販売単価を\nあと${increase.toLocaleString()}円/㎡上げると\n利益率${target}%になります。`;
+    }
+  }
+
+  return { icon, message, color, unitPriceIncrease, improvementMessage };
+}
+
 export function getCostStructureForClient(clients, clientName, workType) {
   const c = clients.find((x) => x.name === clientName);
   if (!c) {
