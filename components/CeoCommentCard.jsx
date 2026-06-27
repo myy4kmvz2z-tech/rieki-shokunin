@@ -1,20 +1,29 @@
+"use client";
+
 import { buildCeoComments } from "../utils/aiProfitDiagnosis";
 import { hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
 import { s } from "../lib/styles";
 
-export default function CeoCommentCard({ estimates, plan }) {
+export default function CeoCommentCard({ estimates, plan, dashboard }) {
   const pro = hasProFeatures(plan);
-  const comments = pro ? buildCeoComments(estimates) : [];
+  const comments = pro
+    ? buildCeoComments(estimates, {
+        monthlyTargetProfit: dashboard?.monthlyTargetProfit,
+        monthProfit: dashboard?.monthProfit,
+      })
+    : [];
 
   return (
-    <section style={s.ceoCard}>
-      <p style={s.usageTitle}>AI社長コメント</p>
+    <section style={s.ceoDashSection}>
+      <p style={s.ceoDashSectionTitle}>AI社長コメント</p>
       {pro ? (
-        comments.map((comment) => (
-          <p key={comment} style={s.ceoComment}>
-            『{comment}』
-          </p>
-        ))
+        <ul style={s.ceoCommentList}>
+          {comments.map((comment) => (
+            <li key={comment} style={s.ceoCommentItem}>
+              ・{comment}
+            </li>
+          ))}
+        </ul>
       ) : (
         <p style={s.ceoCommentLocked}>{PRO_PLAN_UPGRADE_MESSAGE}</p>
       )}

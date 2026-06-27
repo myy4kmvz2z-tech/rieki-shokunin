@@ -10,6 +10,8 @@ export default function CompanySettings({ company, onBack, onSave }) {
     ...DEFAULT_COMPANY,
     ...company,
     standardLaborUnitPrice: company.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE,
+    monthlyTargetProfit: company.monthlyTargetProfit ?? DEFAULT_COMPANY.monthlyTargetProfit,
+    dailyTargetProfit: company.dailyTargetProfit ?? DEFAULT_COMPANY.dailyTargetProfit,
   });
 
   const setField = (key, value) => {
@@ -28,6 +30,8 @@ export default function CompanySettings({ company, onBack, onSave }) {
       representative: form.representative.trim(),
       invoiceNumber: form.invoiceNumber.trim(),
       standardLaborUnitPrice: Number(form.standardLaborUnitPrice || DEFAULT_LABOR_UNIT_PRICE),
+      monthlyTargetProfit: Number(form.monthlyTargetProfit || 0),
+      dailyTargetProfit: Number(form.dailyTargetProfit || 0),
     });
     alert("保存しました。");
   };
@@ -56,6 +60,18 @@ export default function CompanySettings({ company, onBack, onSave }) {
             label="標準常用単価 円/人工"
             value={form.standardLaborUnitPrice}
             setValue={(v) => setField("standardLaborUnitPrice", v)}
+            type="number"
+          />
+          <Input
+            label="今月目標利益 円"
+            value={form.monthlyTargetProfit}
+            setValue={(v) => setField("monthlyTargetProfit", v)}
+            type="number"
+          />
+          <Input
+            label="今日目標利益 円"
+            value={form.dailyTargetProfit}
+            setValue={(v) => setField("dailyTargetProfit", v)}
             type="number"
           />
         </div>

@@ -184,25 +184,16 @@ export default function Page() {
   } else {
     content = (
       <main style={s.page}>
-        <p style={s.kicker}>利益職人</p>
-        <Dashboard estimates={estimates} clients={clients} plan={plan} />
-        <nav style={s.menuGroup}>
-          <button style={s.btnPrimary} onClick={() => setScreen("new")}>
-            見積を作る
-          </button>
-          <button style={s.btn} onClick={() => setScreen("list")}>
-            見積一覧
-          </button>
-          <button style={s.btn} onClick={() => setScreen("clients")}>
-            元請管理
-          </button>
-          <button style={s.btn} onClick={() => setScreen("settings")}>
-            会社設定
-          </button>
-          <button style={s.btn} onClick={() => setScreen("pricing")}>
-            料金プラン
-          </button>
-        </nav>
+        <Dashboard
+          estimates={estimates}
+          plan={plan}
+          company={company}
+          onNewEstimate={() => setScreen("new")}
+          onList={() => setScreen("list")}
+          onClients={() => setScreen("clients")}
+          onSettings={() => setScreen("settings")}
+          onPricing={() => setScreen("pricing")}
+        />
       </main>
     );
   }
