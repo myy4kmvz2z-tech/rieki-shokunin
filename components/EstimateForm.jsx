@@ -38,6 +38,11 @@ const TRANSPORT_METHOD_OPTIONS = [
   { value: "manual", label: "手入力", icon: "⌨️" },
 ];
 
+const TRIP_TYPE_OPTIONS = [
+  { value: "oneWay", label: "片道" },
+  { value: "roundTrip", label: "往復" },
+];
+
 function Section({ title, children }) {
   return (
     <section style={s.estimateSection}>
@@ -272,6 +277,7 @@ export default function EstimateForm({
   const [currentLocationLabel, setCurrentLocationLabel] = useState(
     initialTransport.currentLocationLabel
   );
+  const [showTransportDetails, setShowTransportDetails] = useState(false);
 
   const handleTransportFeeMethodChange = (method) => {
     setTransportFeeMethod(method);
@@ -528,20 +534,6 @@ export default function EstimateForm({
             />
             <Input
               large
-              label="燃費 km/L"
-              value={fuelEfficiencyKmPerL}
-              setValue={setFuelEfficiencyKmPerL}
-              type="number"
-            />
-            <Input
-              large
-              label="ガソリン単価 円/L"
-              value={gasolinePricePerL}
-              setValue={setGasolinePricePerL}
-              type="number"
-            />
-            <Input
-              large
               label="距離 km"
               value={distanceKm}
               setValue={setDistanceKm}
@@ -551,13 +543,48 @@ export default function EstimateForm({
               <p style={s.estimateReadonlyLabel}>交通費 円</p>
               <p style={s.estimateReadonlyValueLarge}>{yen(totals.transportCost)}</p>
             </div>
+            <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
+            <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
+            <button
+              type="button"
+              style={s.estimateDetailToggleBtn}
+              onClick={() => setShowTransportDetails((open) => !open)}
+            >
+              {showTransportDetails ? "詳細設定を閉じる" : "詳細設定"}
+            </button>
+            {showTransportDetails && (
+              <>
+                <Input
+                  large
+                  label="燃費 km/L"
+                  value={fuelEfficiencyKmPerL}
+                  setValue={setFuelEfficiencyKmPerL}
+                  type="number"
+                />
+                <Input
+                  large
+                  label="ガソリン単価 円/L"
+                  value={gasolinePricePerL}
+                  setValue={setGasolinePricePerL}
+                  type="number"
+                />
+                <CardButtonGroup
+                  label="片道 / 往復"
+                  value={tripType}
+                  setValue={setTripType}
+                  options={TRIP_TYPE_OPTIONS}
+                />
+              </>
+            )}
           </>
         )}
         {transportFeeMethod === "manual" && (
-          <Input large label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
+          <>
+            <Input large label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
+            <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
+            <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
+          </>
         )}
-        <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
-        <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
       </Section>
 
       <Divider />

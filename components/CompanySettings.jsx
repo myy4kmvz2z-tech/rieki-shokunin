@@ -96,13 +96,13 @@ export default function CompanySettings({ company, onBack, onSave }) {
         <h2 style={s.sectionTitle}>交通費設定</h2>
         <div style={s.form}>
           <Input
-            label="燃費 km/L"
+            label="燃費"
             value={form.fuelEfficiencyKmPerL}
             setValue={(v) => setField("fuelEfficiencyKmPerL", v)}
             type="number"
           />
           <Input
-            label="ガソリン単価 円/L"
+            label="ガソリン単価"
             value={form.gasolinePricePerL}
             setValue={(v) => setField("gasolinePricePerL", v)}
             type="number"
