@@ -93,6 +93,34 @@ export default function Dashboard({
 
       <SectionDivider />
 
+      <section style={s.homeSection}>
+        <p style={s.homeSectionTitle}>📬 送信センター</p>
+        <div style={s.homeStatusGrid}>
+          <div style={s.homeStatusItem}>
+            <p style={s.homeStatusLabel}>🟡 見積中</p>
+            <p style={s.homeStatusValue}>{dashboard.statusCounts.estimate}件</p>
+          </div>
+          <div style={s.homeStatusItem}>
+            <p style={s.homeStatusLabel}>🔵 送付済</p>
+            <p style={s.homeStatusValue}>{dashboard.statusCounts.sent}件</p>
+          </div>
+          <div style={s.homeStatusItem}>
+            <p style={s.homeStatusLabel}>🟣 請求済</p>
+            <p style={s.homeStatusValue}>{dashboard.statusCounts.invoiced}件</p>
+          </div>
+          <div style={s.homeStatusItem}>
+            <p style={s.homeStatusLabel}>🟠 入金待ち</p>
+            <p style={s.homeStatusValue}>{dashboard.statusCounts.pending}件</p>
+          </div>
+          <div style={{ ...s.homeStatusItem, gridColumn: "1 / -1" }}>
+            <p style={s.homeStatusLabel}>🟢 入金済</p>
+            <p style={s.homeStatusValue}>{dashboard.statusCounts.paid}件</p>
+          </div>
+        </div>
+      </section>
+
+      <SectionDivider />
+
       <CeoCommentCard estimates={estimates} plan={plan} dashboard={dashboard} />
 
       <SectionDivider />

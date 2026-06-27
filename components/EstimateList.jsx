@@ -7,7 +7,9 @@ import {
   yen,
 } from "../utils/calcProfit";
 import PaymentControls from "./PaymentControls";
+import PaymentStatusBadge from "./PaymentStatusBadge";
 import PdfActionButtons from "./PdfActionButtons";
+import SendCenterSheet from "./SendCenterSheet";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
@@ -21,12 +23,15 @@ export default function EstimateList({
   onGeneratePdf,
   isPdfGenerating,
   onPdfBlocked,
+  onPrintDocument,
+  onSendComplete,
   onAdvancePayment,
   onMarkPaid,
 }) {
   const [pdfReadyMap, setPdfReadyMap] = useState({});
   const [workingEstimateId, setWorkingEstimateId] = useState(null);
   const [pdfError, setPdfError] = useState("");
+  const [sendSheet, setSendSheet] = useState(null);
 
   const createPdf = async (estimate, type) => {
     setPdfError("");
@@ -38,6 +43,7 @@ export default function EstimateList({
         ...prev,
         [estimate.id]: result,
       }));
+      return result;
     } catch (error) {
       setPdfError(error?.message || "PDFの作成に失敗しました。");
       throw error;
@@ -50,7 +56,7 @@ export default function EstimateList({
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>保存済み見積</h1>
-      <p style={s.sub}>見積 → 受注 → 請求 → 入金待ち → 入金済</p>
+      <p style={s.sub}>見積中 → 送付済 → 請求済 → 入金待ち → 入金済</p>
 
       <UsageCard plan={plan} clientCount={clientCount} estimateCount={estimates.length} compact />
 
@@ -67,7 +73,20 @@ export default function EstimateList({
 
           return (
             <section key={e.id} style={s.listCard}>
-              <h2 style={{ ...s.sectionTitle, marginBottom: 8 }}>{e.siteName}</h2>
+              <div style={s.listCardHeader}>
+                <div style={s.listCardTitleBlock}>
+                  <PaymentStatusBadge status={e.paymentStatus} />
+                  <h2 style={{ ...s.sectionTitle, marginBottom: 0 }}>{e.siteName}</h2>
+                </div>
+                <button
+                  type="button"
+                  style={s.sendBtn}
+                  onClick={() => setSendSheet({ estimate: e, docType: "estimate" })}
+                >
+                  📤 送る
+                </button>
+              </div>
+
               <p style={s.listMeta}>{e.client}</p>
 
               <div style={s.listStats}>
@@ -93,6 +112,14 @@ export default function EstimateList({
                 onMarkPaid={() => onMarkPaid(e.id)}
               />
 
+              <button
+                type="button"
+                style={s.invoiceSendBtn}
+                onClick={() => setSendSheet({ estimate: e, docType: "invoice" })}
+              >
+                請求書を送る
+              </button>
+
               <PdfActionButtons
                 plan={plan}
                 isWorking={isWorking}
@@ -114,6 +141,21 @@ export default function EstimateList({
           );
         })
       )}
+
+      <SendCenterSheet
+        open={!!sendSheet}
+        estimate={sendSheet?.estimate}
+        docType={sendSheet?.docType}
+        plan={plan}
+        onClose={() => setSendSheet(null)}
+        onGeneratePdf={onGeneratePdf}
+        onPrint={onPrintDocument}
+        onPdfBlocked={onPdfBlocked}
+        onComplete={(payload) => {
+          onSendComplete?.(payload);
+          setSendSheet(null);
+        }}
+      />
     </main>
   );
 }

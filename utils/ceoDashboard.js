@@ -1,6 +1,6 @@
 import { resolveEstimateFinancials } from "./calcProfit";
 import { getEffectiveTravelDistanceKm, getTravelCostBreakdown } from "./calcTransport";
-import { calcPaymentAmounts } from "../lib/payment";
+import { calcPaymentAmounts, countEstimatesByStatus } from "../lib/payment";
 
 const DEFAULT_MONTHLY_TARGET = 500000;
 
@@ -117,6 +117,8 @@ export function buildCeoDashboard(estimates, targets = {}) {
   const rankingSource =
     Object.keys(monthClientRates).length > 0 ? monthClientRates : allClientRates;
 
+  const statusCounts = countEstimatesByStatus(estimates);
+
   return {
     monthProfit,
     monthSales,
@@ -130,5 +132,6 @@ export function buildCeoDashboard(estimates, targets = {}) {
     monthTravelDistanceKm: Math.round(monthTravelDistanceKm * 10) / 10,
     monthTransportCost,
     clientRanking: buildClientRanking(rankingSource),
+    statusCounts,
   };
 }

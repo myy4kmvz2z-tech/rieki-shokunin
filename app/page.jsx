@@ -17,9 +17,12 @@ import { usePlan } from "../hooks/usePlan";
 import { canSaveEstimate, getEstimateLimitMessage, getPdfUpgradeMessage, hasPdfFeatures } from "../lib/plan";
 import {
   getNextPaymentStatus,
+  getStatusAfterSend,
   PAYMENT_PAID,
   withPaymentStatus,
 } from "../lib/payment";
+import { useSendHistory } from "../hooks/useSendHistory";
+import { buildSendHistoryEntry } from "../utils/sendCenter";
 import { s } from "../lib/styles";
 import SiteMasterManager from "../components/SiteMasterManager";
 import { useSiteMasters } from "../hooks/useSiteMasters";
@@ -47,6 +50,7 @@ export default function Page() {
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
   const pdfExport = usePdfExport();
+  const { recordSend } = useSendHistory();
 
   useEffect(() => {
     const clearPrint = () => {
@@ -106,6 +110,32 @@ export default function Page() {
 
   const handleMarkPaid = (id) => {
     updateEstimate(id, { paymentStatus: PAYMENT_PAID });
+  };
+
+  const handlePrintDocument = (estimate, docType) => {
+    if (!hasPdfFeatures(plan)) {
+      setShowPdfUpgradeModal(true);
+      return;
+    }
+    if (docType === "invoice") {
+      handleInvoicePdfOutput(estimate);
+      return;
+    }
+    handlePdfOutput(estimate);
+  };
+
+  const handleSendComplete = ({ estimate, docType, method, filename }) => {
+    recordSend(
+      buildSendHistoryEntry({
+        estimate,
+        docType,
+        method,
+        filename: filename ?? (method === "print" ? "印刷" : ""),
+      })
+    );
+    updateEstimate(estimate.id, {
+      paymentStatus: getStatusAfterSend(estimate.paymentStatus, docType),
+    });
   };
 
   const handleQuickEstimate = (client, workType) => {
@@ -275,6 +305,8 @@ export default function Page() {
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
+        onPrintDocument={handlePrintDocument}
+        onSendComplete={handleSendComplete}
         onAdvancePayment={handleAdvancePayment}
         onMarkPaid={handleMarkPaid}
       />
