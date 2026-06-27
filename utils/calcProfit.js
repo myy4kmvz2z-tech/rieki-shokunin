@@ -1,4 +1,4 @@
-import { WORK_TYPES, WORK_TYPE_FIELD, DEFAULT_LABOR_UNIT_PRICE } from "../lib/constants";
+import { WORK_TYPES, WORK_TYPE_FIELD, DEFAULT_LABOR_UNIT_PRICE, DEFAULT_TARGET_PROFIT_RATE } from "../lib/constants";
 import {
   calcTransportTotal,
   getTransportDetailLabel,
@@ -8,8 +8,7 @@ import {
 
 export const yen = (n) => `¥${Number(n || 0).toLocaleString()}`;
 
-export const DEFAULT_TARGET_PROFIT_RATE = 20;
-export { DEFAULT_LABOR_UNIT_PRICE };
+export { DEFAULT_LABOR_UNIT_PRICE, DEFAULT_TARGET_PROFIT_RATE };
 export const PROFIT_RATE_GOOD_THRESHOLD = 20;
 export const PROFIT_RATE_WARNING_THRESHOLD = 10;
 
@@ -297,6 +296,17 @@ export function getEstimateLine(estimate, standardLaborUnitPrice) {
   };
 }
 
+export function getProfitRateColorBand(rate) {
+  const value = Number(rate || 0);
+  if (value >= 20) {
+    return { icon: "🟢", label: "20%以上", color: "#22c55e" };
+  }
+  if (value >= 10) {
+    return { icon: "🟡", label: "10〜19.9%", color: "#eab308" };
+  }
+  return { icon: "🔴", label: "10%未満", color: "#ef4444" };
+}
+
 export function getCostStructureForClient(clients, clientName, workType) {
   const c = clients.find((x) => x.name === clientName);
   if (!c) {
@@ -307,6 +317,9 @@ export function getCostStructureForClient(clients, clientName, workType) {
       auxiliary: 0,
       waste: 0,
       transport: 0,
+      standardLaborUnitPrice: DEFAULT_LABOR_UNIT_PRICE,
+      standardOutsourcingSqmUnitPrice: 0,
+      standardTargetProfitRate: DEFAULT_TARGET_PROFIT_RATE,
     };
   }
   const field = WORK_TYPE_FIELD[workType];
@@ -317,6 +330,9 @@ export function getCostStructureForClient(clients, clientName, workType) {
     auxiliary: Number(c.auxiliary ?? 0),
     waste: Number(c.waste ?? 0),
     transport: Number(c.transport ?? 0),
+    standardLaborUnitPrice: Number(c.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE),
+    standardOutsourcingSqmUnitPrice: Number(c.standardOutsourcingSqmUnitPrice ?? 0),
+    standardTargetProfitRate: Number(c.standardTargetProfitRate ?? DEFAULT_TARGET_PROFIT_RATE),
   };
 }
 

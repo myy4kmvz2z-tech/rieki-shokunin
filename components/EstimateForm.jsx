@@ -1,16 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DEFAULT_LABOR_UNIT_PRICE, OUTSOURCING_MODES, WORK_TYPES } from "../lib/constants";
+import {
+  DEFAULT_LABOR_UNIT_PRICE,
+  DEFAULT_TARGET_PROFIT_RATE,
+  OUTSOURCING_MODES,
+  WORK_TYPES,
+} from "../lib/constants";
 import {
   calcEstimateTotals,
-  DEFAULT_TARGET_PROFIT_RATE,
   formatCostDisplay,
   formatOutsourcingDisplay,
-  formatProfitRateJudgment,
   formatSalesDisplay,
   getCostStructureForClient,
-  getProfitRateJudgment,
+  getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
 import {
@@ -22,17 +25,24 @@ import {
 import { s } from "../lib/styles";
 import { Input, Select } from "./FormFields";
 
-function getStandardLaborUnitPrice(company) {
-  return Number(company?.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE);
+function getStandardLaborUnitPrice(company, fromClient) {
+  return Number(
+    fromClient?.standardLaborUnitPrice ??
+      company?.standardLaborUnitPrice ??
+      DEFAULT_LABOR_UNIT_PRICE
+  );
 }
 
-function getInitialOutsourcingState(initialEstimate, standardLaborUnitPrice) {
+function getInitialOutsourcingState(initialEstimate, fromClient, company) {
+  const standardLaborUnitPrice = getStandardLaborUnitPrice(company, fromClient);
   const outsourcingMode = initialEstimate?.outsourcingMode === "sqm" ? "sqm" : "labor";
   const laborCount = Number(initialEstimate?.laborCount ?? 0);
   const laborUnitPrice = Number(
-    initialEstimate?.laborUnitPrice ?? standardLaborUnitPrice
+    initialEstimate?.laborUnitPrice ?? fromClient?.standardLaborUnitPrice ?? standardLaborUnitPrice
   );
-  const outsourcingSqmUnitPrice = Number(initialEstimate?.outsourcingSqmUnitPrice ?? 0);
+  const outsourcingSqmUnitPrice = Number(
+    initialEstimate?.outsourcingSqmUnitPrice ?? fromClient?.standardOutsourcingSqmUnitPrice ?? 0
+  );
   const directLabor = Number(initialEstimate?.labor ?? 0);
 
   return {
@@ -49,10 +59,9 @@ function getInitialCostState(
   initialEstimate,
   defaultClient,
   defaultWorkType,
-  standardLaborUnitPrice
+  company
 ) {
   const fromClient = getCostStructureForClient(clients, defaultClient, defaultWorkType);
-  const laborState = getInitialOutsourcingState(initialEstimate, standardLaborUnitPrice);
 
   if (!initialEstimate) {
     return {
@@ -63,8 +72,8 @@ function getInitialCostState(
       waste: fromClient.waste,
       sellingUnitPrice: 0,
       discount: 0,
-      targetProfitRate: DEFAULT_TARGET_PROFIT_RATE,
-      ...laborState,
+      targetProfitRate: fromClient.standardTargetProfitRate,
+      ...getInitialOutsourcingState(null, fromClient, company),
     };
   }
 
@@ -76,6 +85,12 @@ function getInitialCostState(
       initialEstimate.workType ?? defaultWorkType
     ).material;
 
+  const editClient = getCostStructureForClient(
+    clients,
+    initialEstimate.client ?? defaultClient,
+    initialEstimate.workType ?? defaultWorkType
+  );
+
   return {
     material,
     pasteLabor: initialEstimate.pasteLabor ?? 0,
@@ -84,8 +99,23 @@ function getInitialCostState(
     waste: initialEstimate.waste ?? 0,
     sellingUnitPrice: initialEstimate.unitPrice ?? 0,
     discount: initialEstimate.discount ?? 0,
-    targetProfitRate: initialEstimate.targetProfitRate ?? DEFAULT_TARGET_PROFIT_RATE,
-    ...getInitialOutsourcingState(initialEstimate, standardLaborUnitPrice),
+    targetProfitRate:
+      initialEstimate.targetProfitRate ?? editClient.standardTargetProfitRate,
+    ...getInitialOutsourcingState(initialEstimate, editClient, company),
+  };
+}
+
+function syncFromClient(fromClient) {
+  return {
+    material: fromClient.material,
+    pasteLabor: fromClient.pasteLabor,
+    substrate: fromClient.substrate,
+    auxiliary: fromClient.auxiliary,
+    waste: fromClient.waste,
+    laborUnitPrice: fromClient.standardLaborUnitPrice,
+    outsourcingSqmUnitPrice: fromClient.standardOutsourcingSqmUnitPrice,
+    targetProfitRate: fromClient.standardTargetProfitRate,
+    fixedTransport: fromClient.transport,
   };
 }
 
@@ -101,14 +131,13 @@ export default function EstimateForm({
   const defaultClient = clients[0]?.name || "";
   const defaultWorkType = initialEstimate?.workType ?? "クロス SP";
   const skipClientSync = useRef(editing);
-  const standardLaborUnitPrice = getStandardLaborUnitPrice(company);
 
   const initialCost = getInitialCostState(
     clients,
     initialEstimate,
     initialEstimate?.client ?? defaultClient,
     defaultWorkType,
-    standardLaborUnitPrice
+    company
   );
   const initialTransport = getInitialTransportState(
     initialEstimate,
@@ -157,13 +186,17 @@ export default function EstimateForm({
     }
 
     const fromClient = getCostStructureForClient(clients, client, workType);
-    setMaterial(fromClient.material);
-    setPasteLabor(fromClient.pasteLabor);
-    setSubstrate(fromClient.substrate);
-    setAuxiliary(fromClient.auxiliary);
-    setWaste(fromClient.waste);
+    const synced = syncFromClient(fromClient);
+    setMaterial(synced.material);
+    setPasteLabor(synced.pasteLabor);
+    setSubstrate(synced.substrate);
+    setAuxiliary(synced.auxiliary);
+    setWaste(synced.waste);
+    setLaborUnitPrice(synced.laborUnitPrice);
+    setOutsourcingSqmUnitPrice(synced.outsourcingSqmUnitPrice);
+    setTargetProfitRate(synced.targetProfitRate);
     if (transportMode === "fixed") {
-      setFixedTransport(fromClient.transport);
+      setFixedTransport(synced.fixedTransport);
     }
   }, [clients, client, workType, transportMode]);
 
@@ -190,7 +223,7 @@ export default function EstimateForm({
     parkingFee,
   });
   const recommendedSellingUnitPrice = totals.recommendedSellingUnitPrice;
-  const judgment = getProfitRateJudgment(totals.rate);
+  const profitRateBand = getProfitRateColorBand(totals.rate);
   const distanceTransportPreview = calcDistanceTransport({ distanceKm, kmRate, tripType });
   const transportPreviewLabel =
     transportMode === "distance"
@@ -259,91 +292,49 @@ export default function EstimateForm({
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>{editing ? "見積編集" : "見積作成"}</h1>
 
-      <section style={s.card}>
-        <p style={s.cardLabel}>見積利益</p>
-        <h2 style={s.cardValue}>{yen(totals.profit)}</h2>
-        <p style={s.cardSub}>{formatProfitRateJudgment(totals.rate)}</p>
-      </section>
-
       <div style={s.form}>
-        <p style={s.formSection}>現場</p>
         <Input label="現場名" value={siteName} setValue={setSiteName} />
         <Select label="元請" value={client} setValue={setClient} options={clientOptions} />
         <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
-
-        <p style={s.formSection}>工事</p>
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-        <Input label="値引き 円" value={discount} setValue={setDiscount} type="number" />
+        <p style={s.hint}>元請を選ぶと原価・外注・目標利益率の標準値が自動入力されます</p>
+      </div>
 
-        <p style={s.formSection}>原価内訳</p>
-        <p style={s.hint}>元請を選ぶと材料費・下地・副資材・廃材・貼り手間が自動入力されます</p>
+      <section style={s.blockSection}>
+        <h2 style={s.blockTitle}>① 原価</h2>
         <Input label="材料費 円/㎡" value={material} setValue={setMaterial} type="number" />
+        <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
         <Input label="下地処理費用 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
         <Input label="副資材 円/㎡" value={auxiliary} setValue={setAuxiliary} type="number" />
         <Input label="廃材処分費用 円/㎡" value={waste} setValue={setWaste} type="number" />
 
-        <p style={s.formSection}>貼り手間</p>
-        <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
-        <p style={s.hint}>原価には含めず、販売単価を決める施工手間です</p>
+        <hr style={s.blockDivider} />
 
-        <p style={s.formSection}>販売単価</p>
-        <p style={s.hint}>推奨販売単価 {yen(recommendedSellingUnitPrice)}/㎡（原価単価 + 貼り手間）</p>
-        <Input
-          label="販売単価 円/㎡"
-          value={sellingUnitPrice}
-          setValue={setSellingUnitPrice}
-          type="number"
-        />
-        <p style={s.hint}>未入力なら推奨販売単価で計算します</p>
-        {totals.usesRecommendedSellingUnitPrice && (
-          <p style={s.hint}>販売単価未入力のため、推奨販売単価を使用中</p>
-        )}
-        <button
-          type="button"
-          style={{ ...s.secondary, width: "100%", marginTop: 8 }}
-          onClick={() => setSellingUnitPrice(recommendedSellingUnitPrice)}
-        >
-          推奨販売単価を販売単価に反映
-        </button>
-
-        <p style={s.formSection}>外注費</p>
         <Select
-          label="外注費方式"
+          label="外注方式"
           value={outsourcingMode}
           setValue={setOutsourcingMode}
           options={OUTSOURCING_MODES}
         />
         {outsourcingMode === "labor" ? (
           <>
-            <Input
-              label="外注人工"
-              value={laborCount}
-              setValue={setLaborCount}
-              type="number"
-            />
+            <Input label="外注人工" value={laborCount} setValue={setLaborCount} type="number" />
             <Input
               label="人工単価 円/人工"
               value={laborUnitPrice}
               setValue={setLaborUnitPrice}
               type="number"
             />
-            <p style={s.hint}>外注人工：{Number(laborCount || 0)}人工</p>
-            <p style={s.hint}>人工単価：{yen(laborUnitPrice)}/人工</p>
           </>
         ) : (
-          <>
-            <Input
-              label="外注㎡単価 円/㎡"
-              value={outsourcingSqmUnitPrice}
-              setValue={setOutsourcingSqmUnitPrice}
-              type="number"
-            />
-            <p style={s.hint}>施工面積：{Number(area || 0)}㎡</p>
-            <p style={s.hint}>外注㎡単価：{yen(outsourcingSqmUnitPrice)}/㎡</p>
-          </>
+          <Input
+            label="外注㎡単価 円/㎡"
+            value={outsourcingSqmUnitPrice}
+            setValue={setOutsourcingSqmUnitPrice}
+            type="number"
+          />
         )}
-        <p style={s.hint}>外注費：{yen(totals.labor)}</p>
         <p style={s.hint}>{outsourcingPreview}</p>
         {showDirectLaborInput && (
           <Input
@@ -354,7 +345,8 @@ export default function EstimateForm({
           />
         )}
 
-        <p style={s.formSection}>交通費・駐車場代</p>
+        <hr style={s.blockDivider} />
+
         <Select
           label="交通費方式"
           value={transportMode}
@@ -370,40 +362,41 @@ export default function EstimateForm({
         ) : (
           <Input label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
         )}
-        <p style={s.hint}>
-          交通費 {yen(totals.transportCost)}（{transportPreviewLabel}）
-        </p>
+        <p style={s.hint}>交通費 {yen(totals.transportCost)}（{transportPreviewLabel}）</p>
         <Input label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
+      </section>
 
+      <section style={s.blockSection}>
+        <h2 style={s.blockTitle}>② 売価</h2>
+        <p style={s.hint}>推奨販売単価 {yen(recommendedSellingUnitPrice)}/㎡（原価単価 + 貼り手間）</p>
         <Input
-          label="目標利益率 %（判定用）"
+          label="販売単価 円/㎡"
+          value={sellingUnitPrice}
+          setValue={setSellingUnitPrice}
+          type="number"
+        />
+        <p style={s.hint}>未入力なら推奨販売単価で計算します</p>
+        {totals.usesRecommendedSellingUnitPrice && (
+          <p style={s.hint}>販売単価未入力のため、推奨販売単価を使用中</p>
+        )}
+        <button
+          type="button"
+          style={{ ...s.secondary, width: "100%" }}
+          onClick={() => setSellingUnitPrice(recommendedSellingUnitPrice)}
+        >
+          推奨販売単価を販売単価に反映
+        </button>
+        <Input label="値引き 円" value={discount} setValue={setDiscount} type="number" />
+        <Input
+          label="目標利益率 %"
           value={targetProfitRate}
           setValue={setTargetProfitRate}
           type="number"
         />
-      </div>
+      </section>
 
-      <section style={s.result}>
-        <p style={s.resultLabel}>原価単価</p>
-        <p style={s.resultDetail}>{yen(totals.costUnitPrice)}/㎡</p>
-
-        <p style={s.resultLabel}>貼り手間</p>
-        <p style={s.resultDetail}>{yen(totals.pasteLabor)}/㎡</p>
-
-        <p style={s.resultLabel}>推奨販売単価</p>
-        <p style={s.resultDetail}>{yen(recommendedSellingUnitPrice)}/㎡</p>
-
-        <p style={s.resultLabel}>販売単価</p>
-        <p style={s.resultDetail}>{yen(totals.inputSellingUnitPrice)}/㎡</p>
-        {totals.usesRecommendedSellingUnitPrice && (
-          <p style={s.hint}>販売単価未入力のため、推奨販売単価を使用中</p>
-        )}
-
-        <p style={s.resultLabel}>有効販売単価</p>
-        <p style={s.resultDetail}>{yen(totals.effectiveSellingUnitPrice)}/㎡</p>
-
-        <p style={s.resultLabel}>外注費</p>
-        <p style={s.resultDetail}>{outsourcingPreview}</p>
+      <section style={s.blockSection}>
+        <h2 style={s.blockTitle}>③ 結果</h2>
 
         <p style={s.resultLabel}>売上</p>
         <p style={s.resultDetail}>
@@ -432,17 +425,22 @@ export default function EstimateForm({
         </p>
 
         <p style={s.resultLabel}>利益</p>
-        <p style={s.resultDetail}>{yen(totals.profit)}</p>
-
-        <p style={s.resultLabel}>利益率</p>
-        <p style={s.resultDetail}>
-          {totals.sales > 0
-            ? formatProfitRateJudgment(totals.rate)
-            : "—（売上が0のため計算不可）"}
+        <p style={{ ...s.resultDetail, color: totals.profit >= 0 ? "#fff" : "#ef4444" }}>
+          {yen(totals.profit)}
         </p>
 
-        <p style={s.resultLabel}>判定</p>
-        <p style={s.resultDetail}>{judgment.icon} {judgment.label}</p>
+        <p style={s.resultLabel}>利益率</p>
+        <p
+          style={{
+            ...s.resultDetail,
+            color: totals.sales > 0 ? profitRateBand.color : "#888",
+            fontWeight: 900,
+          }}
+        >
+          {totals.sales > 0
+            ? `${profitRateBand.icon} ${Number(totals.rate || 0).toFixed(1)}%（${profitRateBand.label}）`
+            : "—（売上が0のため計算不可）"}
+        </p>
       </section>
 
       <div style={s.formActions}>
