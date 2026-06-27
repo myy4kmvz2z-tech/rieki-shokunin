@@ -12,6 +12,10 @@ export default function CompanySettings({ company, onBack, onSave }) {
     standardLaborUnitPrice: company.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE,
     monthlyTargetProfit: company.monthlyTargetProfit ?? DEFAULT_COMPANY.monthlyTargetProfit,
     dailyTargetProfit: company.dailyTargetProfit ?? DEFAULT_COMPANY.dailyTargetProfit,
+    transportKmRate: company.transportKmRate ?? DEFAULT_COMPANY.transportKmRate,
+    transportRoundTripDefault:
+      company.transportRoundTripDefault ?? DEFAULT_COMPANY.transportRoundTripDefault,
+    googleMapsApiKey: company.googleMapsApiKey ?? "",
   });
 
   const setField = (key, value) => {
@@ -32,6 +36,9 @@ export default function CompanySettings({ company, onBack, onSave }) {
       standardLaborUnitPrice: Number(form.standardLaborUnitPrice || DEFAULT_LABOR_UNIT_PRICE),
       monthlyTargetProfit: Number(form.monthlyTargetProfit || 0),
       dailyTargetProfit: Number(form.dailyTargetProfit || 0),
+      transportKmRate: Number(form.transportKmRate || DEFAULT_COMPANY.transportKmRate),
+      transportRoundTripDefault: Boolean(form.transportRoundTripDefault),
+      googleMapsApiKey: form.googleMapsApiKey.trim(),
     });
     alert("保存しました。");
   };
@@ -42,6 +49,7 @@ export default function CompanySettings({ company, onBack, onSave }) {
       <h1 style={s.title}>会社設定</h1>
 
       <section style={s.listCard}>
+        <h2 style={s.sectionTitle}>基本情報</h2>
         <div style={s.form}>
           <Input label="会社名" value={form.name} setValue={(v) => setField("name", v)} />
           <Input label="住所" value={form.address} setValue={(v) => setField("address", v)} />
@@ -75,8 +83,44 @@ export default function CompanySettings({ company, onBack, onSave }) {
             type="number"
           />
         </div>
-        <button style={s.save} onClick={handleSave}>保存する</button>
       </section>
+
+      <section style={s.listCard}>
+        <h2 style={s.sectionTitle}>交通費設定</h2>
+        <div style={s.form}>
+          <Input
+            label="1kmあたり単価 円/km"
+            value={form.transportKmRate}
+            setValue={(v) => setField("transportKmRate", v)}
+            type="number"
+          />
+          <label style={s.toggleRow}>
+            <input
+              type="checkbox"
+              checked={Boolean(form.transportRoundTripDefault)}
+              onChange={(e) => setField("transportRoundTripDefault", e.target.checked)}
+            />
+            <span>往復を初期値にする</span>
+          </label>
+        </div>
+      </section>
+
+      <section style={s.listCard}>
+        <h2 style={s.sectionTitle}>Google Maps API（将来対応）</h2>
+        <p style={s.hint}>
+          GPS交通費の Distance Matrix API 用キーです。フェーズ1では保存のみで通信は行いません。
+        </p>
+        {/* TODO: Phase 2 - APIキーを使った Distance Matrix API 通信 */}
+        <div style={s.form}>
+          <Input
+            label="Google Maps APIキー"
+            value={form.googleMapsApiKey}
+            setValue={(v) => setField("googleMapsApiKey", v)}
+          />
+        </div>
+      </section>
+
+      <button style={s.save} onClick={handleSave}>保存する</button>
     </main>
   );
 }
