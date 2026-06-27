@@ -1,10 +1,11 @@
 import {
-  FREE_CLIENT_LIMIT,
-  FREE_ESTIMATE_LIMIT,
-  formatBillingYen,
+  getPlanDefinition,
+  getPlanLabel,
   getUsageSummary,
-} from "../lib/billing";
-import { getPlanLabel, isProPlan, PLAN_FREE, PLAN_PRO } from "../lib/plan";
+  normalizePlan,
+  PLAN_CATALOG,
+  PLAN_IDS,
+} from "../lib/plan";
 import { s } from "../lib/styles";
 
 function PlanRow({ label, value, highlight }) {
@@ -25,72 +26,85 @@ function PlanSection({ title, children }) {
   );
 }
 
+function PlanCard({ item, current, onSelect }) {
+  const active = item.id === current;
+  return (
+    <section
+      style={{
+        ...s.listCard,
+        marginTop: 12,
+        borderColor: active ? "#ff6a00" : "#2a2a2a",
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12 }}>
+        <h2 style={{ ...s.sectionTitle, margin: 0, fontSize: 20 }}>{item.label}</h2>
+        <span style={{ color: "#ff8a00", fontWeight: 900, fontSize: 16 }}>{item.priceLabel}</span>
+      </div>
+      {active && <p style={{ ...s.proBadge, marginTop: 12 }}>現在のプラン</p>}
+      <ul style={{ margin: "12px 0 0", paddingLeft: 18, color: "#ccc", lineHeight: 1.8 }}>
+        {item.highlights.map((line) => (
+          <li key={line} style={{ fontWeight: 700, fontSize: 14 }}>
+            {line}
+          </li>
+        ))}
+      </ul>
+      {!active && (
+        <button
+          type="button"
+          style={{ ...s.secondary, width: "100%", marginTop: 14 }}
+          onClick={() => onSelect(item.id)}
+        >
+          このプランに切替（デモ）
+        </button>
+      )}
+    </section>
+  );
+}
+
 export default function PricingPlan({ clients, estimates, plan, onSetPlan, onBack }) {
-  const usage = getUsageSummary(clients.length, estimates.length);
-  const pro = isProPlan(plan);
+  const current = normalizePlan(plan);
+  const usage = getUsageSummary(plan, clients.length, estimates.length);
+  const def = getPlanDefinition(plan);
 
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>料金プラン</h1>
 
-      <PlanSection title="ご利用プラン">
-        <PlanRow label="現在のプラン" value={getPlanLabel(plan)} highlight={pro} />
-        <PlanRow
-          label="AI利益診断"
-          value={pro ? "利用可" : "プロプラン限定"}
-        />
-        <PlanRow
-          label="AI社長コメント"
-          value={pro ? "利用可" : "プロプラン限定"}
-        />
-        <button
-          type="button"
-          style={{ ...s.secondary, width: "100%", marginTop: 8 }}
-          onClick={() => onSetPlan(pro ? PLAN_FREE : PLAN_PRO)}
-        >
-          {pro ? "無料プランに切替（デモ）" : "プロプランに切替（デモ）"}
-        </button>
-        <p style={s.planNote}>※ 決済連携前のデモ切替です</p>
-      </PlanSection>
-
-      <PlanSection title="無料枠">
-        <PlanRow label="元請管理" value={`${FREE_CLIENT_LIMIT}件まで無料`} />
-        <PlanRow label="見積保存" value={`${FREE_ESTIMATE_LIMIT}件まで無料`} />
-      </PlanSection>
-
-      <PlanSection title="追加課金">
-        <PlanRow label="元請" value="4件目以降、5件ごとに500円" />
-        <p style={s.planExample}>例）4〜8件：500円 / 9〜13件：1,000円</p>
-        <PlanRow label="見積" value="11件目以降、10件ごとに500円" />
-        <p style={s.planExample}>例）11〜20件：500円 / 21〜30件：1,000円</p>
+      <PlanSection title="現在のプラン">
+        <PlanRow label="プラン" value={getPlanLabel(plan)} highlight />
+        <PlanRow label="月額" value={def.priceLabel} />
+        <PlanRow label="元請" value={usage.clientLimitLabel} />
+        <PlanRow label="見積保存" value={usage.estimateLimitLabel} />
       </PlanSection>
 
       <PlanSection title="現在の利用状況">
         <PlanRow label="元請" value={`${usage.clientCount}件`} />
         <PlanRow label="見積" value={`${usage.estimateCount}件`} />
-        <PlanRow
-          label="元請 無料枠残り"
-          value={`${usage.clientFreeRemaining}件`}
-          highlight={usage.clientFreeRemaining === 0}
-        />
-        <PlanRow
-          label="見積 無料枠残り"
-          value={`${usage.estimateFreeRemaining}件`}
-          highlight={usage.estimateFreeRemaining === 0}
-        />
+        {usage.clientRemaining !== null && (
+          <PlanRow
+            label="元請 残り"
+            value={`${usage.clientRemaining}件`}
+            highlight={usage.clientRemaining === 0}
+          />
+        )}
+        {usage.estimateRemaining !== null && (
+          <PlanRow
+            label="見積 残り"
+            value={`${usage.estimateRemaining}件`}
+            highlight={usage.estimateRemaining === 0}
+          />
+        )}
       </PlanSection>
 
-      <section style={{ ...s.listCard, borderColor: "#ff6a00" }}>
-        <h2 style={s.planSectionTitle}>追加課金目安</h2>
-        <PlanRow label="元請" value={formatBillingYen(usage.clientBilling)} />
-        <PlanRow label="見積" value={formatBillingYen(usage.estimateBilling)} />
-        <div style={s.planTotal}>
-          <span style={s.planLabel}>合計</span>
-          <span style={s.planTotalValue}>{formatBillingYen(usage.totalBilling)}</span>
-        </div>
-        <p style={s.planNote}>※ 表示のみ（決済・Stripe連携は後日対応）</p>
-      </section>
+      <p style={{ ...s.usageTitle, marginTop: 8 }}>プラン一覧</p>
+      {PLAN_CATALOG.map((item) => (
+        <PlanCard key={item.id} item={item} current={current} onSelect={onSetPlan} />
+      ))}
+
+      <p style={{ ...s.planNote, marginTop: 16 }}>
+        ※ 決済・Stripe連携は後日対応。切替はデモ用です。
+      </p>
     </main>
   );
 }

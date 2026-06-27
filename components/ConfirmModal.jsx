@@ -7,6 +7,7 @@ export default function ConfirmModal({
   message,
   confirmLabel = "OK",
   cancelLabel = "キャンセル",
+  alertOnly = false,
   onConfirm,
   onCancel,
 }) {
@@ -16,10 +17,12 @@ export default function ConfirmModal({
     <div style={s.modalOverlay} role="dialog" aria-modal="true">
       <div style={s.modalCard}>
         <p style={s.modalMessage}>{message}</p>
-        <div style={s.modalActions}>
-          <button type="button" style={s.secondary} onClick={onCancel}>
-            {cancelLabel}
-          </button>
+        <div style={alertOnly ? { display: "grid" } : s.modalActions}>
+          {!alertOnly && (
+            <button type="button" style={s.secondary} onClick={onCancel}>
+              {cancelLabel}
+            </button>
+          )}
           <button type="button" style={s.save} onClick={onConfirm}>
             {confirmLabel}
           </button>

@@ -14,7 +14,7 @@ import { useClients } from "../hooks/useClients";
 import { useCompany } from "../hooks/useCompany";
 import { useEstimates } from "../hooks/useEstimates";
 import { usePlan } from "../hooks/usePlan";
-import { ESTIMATE_BILLING_CONFIRM_MESSAGE, requiresEstimateBillingConfirm } from "../lib/billing";
+import { canSaveEstimate, getEstimateLimitMessage, getPdfUpgradeMessage, hasPdfFeatures } from "../lib/plan";
 import { s } from "../lib/styles";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
@@ -27,8 +27,8 @@ export default function Page() {
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [pendingEstimate, setPendingEstimate] = useState(null);
-  const [showEstimateBillingModal, setShowEstimateBillingModal] = useState(false);
+  const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
+  const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -45,11 +45,19 @@ export default function Page() {
   }, [printDoc, shouldPrint]);
 
   const handlePdfOutput = (estimate) => {
+    if (!hasPdfFeatures(plan)) {
+      setShowPdfUpgradeModal(true);
+      return;
+    }
     setPrintDoc({ type: "estimate", estimate });
     setShouldPrint(true);
   };
 
   const handleInvoicePdfOutput = (estimate) => {
+    if (!hasPdfFeatures(plan)) {
+      setShowPdfUpgradeModal(true);
+      return;
+    }
     setPrintDoc({ type: "invoice", estimate });
     setShouldPrint(true);
   };
@@ -60,20 +68,11 @@ export default function Page() {
   };
 
   const handleNewEstimateSave = (estimate) => {
-    if (requiresEstimateBillingConfirm(estimates.length)) {
-      setPendingEstimate(estimate);
-      setShowEstimateBillingModal(true);
+    if (!canSaveEstimate(plan, estimates.length)) {
+      setShowEstimateLimitModal(true);
       return;
     }
     saveNewEstimate(estimate);
-  };
-
-  const confirmEstimateSave = () => {
-    if (pendingEstimate) {
-      saveNewEstimate(pendingEstimate);
-    }
-    setPendingEstimate(null);
-    setShowEstimateBillingModal(false);
   };
 
   let content;
@@ -87,6 +86,7 @@ export default function Page() {
         onBack={() => setScreen("home")}
         onSave={handleNewEstimateSave}
         onPdf={handlePdfOutput}
+        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     );
   } else if (screen === "edit") {
@@ -107,6 +107,7 @@ export default function Page() {
           setScreen("list");
         }}
         onPdf={handlePdfOutput}
+        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
       <main style={s.page}>
@@ -126,6 +127,7 @@ export default function Page() {
     content = (
       <EstimateList
         estimates={estimates}
+        plan={plan}
         clientCount={clients.length}
         onBack={() => setScreen("home")}
         onEdit={(id) => {
@@ -155,6 +157,7 @@ export default function Page() {
     content = (
       <ClientManager
         clients={clients}
+        plan={plan}
         estimateCount={estimates.length}
         onBack={() => setScreen("home")}
         onSave={saveClients}
@@ -208,14 +211,20 @@ export default function Page() {
     <>
       <div className="no-print">{content}</div>
       <ConfirmModal
-        open={showEstimateBillingModal}
-        message={ESTIMATE_BILLING_CONFIRM_MESSAGE}
-        confirmLabel="保存する"
-        onConfirm={confirmEstimateSave}
-        onCancel={() => {
-          setPendingEstimate(null);
-          setShowEstimateBillingModal(false);
-        }}
+        open={showEstimateLimitModal}
+        message={getEstimateLimitMessage(plan)}
+        confirmLabel="閉じる"
+        alertOnly
+        onConfirm={() => setShowEstimateLimitModal(false)}
+        onCancel={() => setShowEstimateLimitModal(false)}
+      />
+      <ConfirmModal
+        open={showPdfUpgradeModal}
+        message={getPdfUpgradeMessage()}
+        confirmLabel="閉じる"
+        alertOnly
+        onConfirm={() => setShowPdfUpgradeModal(false)}
+        onCancel={() => setShowPdfUpgradeModal(false)}
       />
       {printDoc && (
         <div className="paper">

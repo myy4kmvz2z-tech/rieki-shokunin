@@ -6,7 +6,13 @@ export function usePlan() {
 
   useEffect(() => {
     const saved = localStorage.getItem("rieki-plan");
-    if (saved) setPlanState(normalizePlan(saved));
+    if (saved) {
+      const normalized = normalizePlan(saved);
+      setPlanState(normalized);
+      if (saved !== normalized) {
+        localStorage.setItem("rieki-plan", normalized);
+      }
+    }
   }, []);
 
   const setPlan = (next) => {

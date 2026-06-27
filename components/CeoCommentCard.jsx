@@ -1,9 +1,9 @@
 import { buildCeoComments } from "../utils/aiProfitDiagnosis";
-import { isProPlan } from "../lib/plan";
+import { hasProFeatures } from "../lib/plan";
 import { s } from "../lib/styles";
 
 export default function CeoCommentCard({ estimates, plan }) {
-  const pro = isProPlan(plan);
+  const pro = hasProFeatures(plan);
   const comments = pro ? buildCeoComments(estimates) : [];
 
   return (

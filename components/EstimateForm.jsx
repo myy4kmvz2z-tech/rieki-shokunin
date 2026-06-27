@@ -14,7 +14,7 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { isProPlan } from "../lib/plan";
+import { hasPdfFeatures, hasProFeatures } from "../lib/plan";
 import AiProfitDiagnosis from "./AiProfitDiagnosis";
 import {
   getInitialTransportState,
@@ -133,6 +133,7 @@ export default function EstimateForm({
   onBack,
   onSave,
   onPdf,
+  onPdfBlocked,
   initialEstimate,
 }) {
   const editing = !!initialEstimate;
@@ -239,7 +240,8 @@ export default function EstimateForm({
     desiredProfitAmount,
   });
   const profitRateBand = getProfitRateColorBand(totals.rate);
-  const pro = isProPlan(plan);
+  const pro = hasProFeatures(plan);
+  const pdfEnabled = hasPdfFeatures(plan);
   const showDirectLaborInput =
     (outsourcingMode === "labor" && Number(laborCount || 0) <= 0) ||
     (outsourcingMode === "sqm" && Number(outsourcingSqmUnitPrice || 0) <= 0);
@@ -469,7 +471,16 @@ export default function EstimateForm({
         <button style={s.save} onClick={() => onSave(buildEstimate())}>
           {editing ? "保存" : "保存する"}
         </button>
-        <button style={s.pdf} onClick={() => onPdf(buildEstimate())}>
+        <button
+          style={{ ...s.pdf, opacity: pdfEnabled ? 1 : 0.5 }}
+          onClick={() => {
+            if (!pdfEnabled) {
+              onPdfBlocked?.();
+              return;
+            }
+            onPdf(buildEstimate());
+          }}
+        >
           印刷
         </button>
       </div>

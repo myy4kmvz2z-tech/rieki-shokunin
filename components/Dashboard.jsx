@@ -29,7 +29,7 @@ export default function Dashboard({ estimates, clients, plan }) {
       </div>
 
       <CeoCommentCard estimates={estimates} plan={plan} />
-      <UsageCard clientCount={clients.length} estimateCount={estimates.length} />
+      <UsageCard plan={plan} clientCount={clients.length} estimateCount={estimates.length} />
     </>
   );
 }

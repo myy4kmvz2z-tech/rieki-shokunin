@@ -3,21 +3,16 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import {
-  FREE_ESTIMATE_LIMIT,
-  isPaidEstimate,
-} from "../lib/billing";
-import BillingBadge from "./BillingBadge";
-import UsageCard from "./UsageCard";
 import { s } from "../lib/styles";
+import UsageCard from "./UsageCard";
 
-export default function EstimateList({ estimates, clientCount, onBack, onEdit, onPdf }) {
+export default function EstimateList({ estimates, plan, clientCount, onBack, onEdit, onPdf }) {
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>見積一覧</h1>
 
-      <UsageCard clientCount={clientCount} estimateCount={estimates.length} compact />
+      <UsageCard plan={plan} clientCount={clientCount} estimateCount={estimates.length} compact />
 
       {estimates.length === 0 ? (
         <p style={s.muted}>保存済みの見積はありません。</p>
@@ -25,14 +20,10 @@ export default function EstimateList({ estimates, clientCount, onBack, onEdit, o
         estimates.map((e) => {
           const display = getEstimateDisplayTotals(e);
           const band = getProfitRateColorBand(display.rate);
-          const paid = isPaidEstimate(estimates, e.id);
 
           return (
             <section key={e.id} style={s.listCard}>
-              <div style={s.cardHeaderRow}>
-                <h2 style={{ ...s.sectionTitle, margin: 0 }}>{e.siteName}</h2>
-                {paid && <BillingBadge />}
-              </div>
+              <h2 style={{ ...s.sectionTitle, marginBottom: 8 }}>{e.siteName}</h2>
               <p style={s.listMeta}>{e.client}</p>
 
               <div style={s.listStats}>
@@ -63,12 +54,6 @@ export default function EstimateList({ estimates, clientCount, onBack, onEdit, o
             </section>
           );
         })
-      )}
-
-      {estimates.length > FREE_ESTIMATE_LIMIT && (
-        <p style={{ ...s.usageNote, marginTop: 16, color: "#ff8a00" }}>
-          {FREE_ESTIMATE_LIMIT + 1}件目以降は課金対象です
-        </p>
       )}
     </main>
   );
