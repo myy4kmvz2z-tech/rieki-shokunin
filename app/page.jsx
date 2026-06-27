@@ -106,6 +106,7 @@ export default function Page() {
         onBack={() => setScreen("home")}
         onSave={handleNewEstimateSave}
         onPdf={handlePdfOutput}
+        onInvoicePdf={handleInvoicePdfOutput}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     );
@@ -127,6 +128,7 @@ export default function Page() {
           setScreen("list");
         }}
         onPdf={handlePdfOutput}
+        onInvoicePdf={handleInvoicePdfOutput}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (

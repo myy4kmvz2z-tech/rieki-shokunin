@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import {
   DEFAULT_LABOR_UNIT_PRICE,
   DEFAULT_TARGET_PROFIT_RATE,
-  OUTSOURCING_MODES,
   WORK_TYPES,
 } from "../lib/constants";
 import {
@@ -14,18 +13,57 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { hasPdfFeatures, hasProFeatures, PRO_PLAN_UPGRADE_MESSAGE } from "../lib/plan";
-import AiProfitDiagnosis from "./AiProfitDiagnosis";
+import { hasPdfFeatures } from "../lib/plan";
 import {
   getDefaultTripType,
   getInitialTransportState,
-  TRANSPORT_FEE_METHODS,
   TRANSPORT_MODE_FIXED,
   TRANSPORT_MODE_GPS,
 } from "../utils/calcTransport";
 import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
-import { Collapsible, Input, RadioGroup, ReadOnlyStat, Select } from "./FormFields";
+import { Input, RadioGroup, Select } from "./FormFields";
+
+const OUTSOURCING_MODE_OPTIONS = [
+  { value: "labor", label: "常用（人工）" },
+  { value: "sqm", label: "請負（㎡）" },
+];
+
+const TRANSPORT_METHOD_OPTIONS = [
+  { value: "gps", label: "GPS" },
+  { value: "manual", label: "手入力" },
+];
+
+function Section({ title, children }) {
+  return (
+    <section style={s.estimateSection}>
+      <h2 style={s.estimateSectionTitle}>{title}</h2>
+      <div style={s.estimateSectionBody}>{children}</div>
+    </section>
+  );
+}
+
+function Divider() {
+  return <hr style={s.estimateDivider} />;
+}
+
+function ReadonlyMetric({ label, value, large = false }) {
+  return (
+    <div style={large ? s.estimateReadonlyLarge : s.estimateReadonly}>
+      <p style={s.estimateReadonlyLabel}>{label}</p>
+      <p style={large ? s.estimateReadonlyValueLarge : s.estimateReadonlyValue}>{value}</p>
+    </div>
+  );
+}
+
+function HeroResultCard({ label, value, color, borderColor }) {
+  return (
+    <div style={{ ...s.estimateHeroCard, borderColor: borderColor || "#2a2a2a" }}>
+      <p style={s.estimateHeroLabel}>{label}</p>
+      <p style={{ ...s.estimateHeroValue, color: color || "#fff" }}>{value}</p>
+    </div>
+  );
+}
 
 function getStandardLaborUnitPrice(company, fromClient) {
   return Number(
@@ -136,6 +174,7 @@ export default function EstimateForm({
   onBack,
   onSave,
   onPdf,
+  onInvoicePdf,
   onPdfBlocked,
   initialEstimate,
 }) {
@@ -181,7 +220,7 @@ export default function EstimateForm({
   );
   const [directLabor, setDirectLabor] = useState(initialCost.directLabor);
   const [targetProfitRate, setTargetProfitRate] = useState(initialCost.targetProfitRate);
-  const [desiredProfitAmount, setDesiredProfitAmount] = useState(initialCost.desiredProfitAmount);
+  const [desiredProfitAmount] = useState(initialCost.desiredProfitAmount);
   const [transportFeeMethod, setTransportFeeMethod] = useState(
     initialTransport.transportFeeMethod
   );
@@ -273,7 +312,6 @@ export default function EstimateForm({
     desiredProfitAmount,
   });
   const profitRateBand = getProfitRateColorBand(totals.rate);
-  const pro = hasProFeatures(plan);
   const pdfEnabled = hasPdfFeatures(plan);
   const showDirectLaborInput =
     (outsourcingMode === "labor" && Number(laborCount || 0) <= 0) ||
@@ -323,129 +361,132 @@ export default function EstimateForm({
     createdAt: initialEstimate?.createdAt ?? new Date().toLocaleString("ja-JP"),
   });
 
+  const handlePdf = (type) => {
+    if (!pdfEnabled) {
+      onPdfBlocked?.();
+      return;
+    }
+    const estimate = buildEstimate();
+    if (type === "invoice") {
+      onInvoicePdf?.(estimate);
+    } else {
+      onPdf?.(estimate);
+    }
+  };
+
   if (clientOptions.length === 0) {
     return (
       <main style={s.page}>
         <button style={s.back} onClick={onBack}>← 戻る</button>
-        <h1 style={s.title}>見積作成</h1>
-        <p style={s.muted}>元請が未登録です。元請管理から先に登録してください。</p>
+        <h1 style={s.estimatePageTitle}>見積作成</h1>
+        <p style={s.muted}>元請が未登録です。</p>
       </main>
     );
   }
 
+  const rateText =
+    totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—";
+  const judgmentText = `${profitRateBand.icon} ${profitRateBand.label}`;
+
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
-      <h1 style={s.title}>{editing ? "見積編集" : "見積作成"}</h1>
+      <h1 style={s.estimatePageTitle}>{editing ? "見積編集" : "見積作成"}</h1>
 
-      <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>1. 現場</h2>
+      <Section title="① 現場情報">
         <Input label="現場名" value={siteName} setValue={setSiteName} />
-        <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
-        <SiteTransportSection
-          company={company}
-          siteAddress={siteAddress}
-          distanceKm={distanceKm}
-          currentLat={currentLat}
-          currentLng={currentLng}
-          currentLocationLabel={currentLocationLabel}
-          onLocationChange={({ lat, lng, label }) => {
-            setCurrentLat(lat);
-            setCurrentLng(lng);
-            setCurrentLocationLabel(label);
-          }}
-          onDistanceChange={setDistanceKm}
-        />
         <Select label="元請" value={client} setValue={setClient} options={clientOptions} />
+        <Input label="現場住所" value={siteAddress} setValue={setSiteAddress} />
         <Select label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
         <Input label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-      </section>
+      </Section>
 
-      <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>2. 原価</h2>
+      <Divider />
+
+      <Section title="② 原価">
         <Input label="材料費 円/㎡" value={material} setValue={setMaterial} type="number" />
-        <Input label="下地処理 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
+        <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
+        <Input label="下地処理費 円/㎡" value={substrate} setValue={setSubstrate} type="number" />
         <Input label="副資材 円/㎡" value={auxiliary} setValue={setAuxiliary} type="number" />
-        <Input label="廃材処分 円/㎡" value={waste} setValue={setWaste} type="number" />
+        <Input label="廃材処分費 円/㎡" value={waste} setValue={setWaste} type="number" />
+        <ReadonlyMetric label="原価単価" value={`${yen(totals.costUnitPrice)}/㎡`} large />
+      </Section>
 
-        <div>
-          <p style={s.resultLabel}>外注費</p>
-          <p style={s.readOnlyValue}>{yen(totals.labor)}</p>
-        </div>
+      <Divider />
 
+      <Section title="③ 外注">
+        <RadioGroup
+          label="方式"
+          value={outsourcingMode}
+          setValue={setOutsourcingMode}
+          options={OUTSOURCING_MODE_OPTIONS}
+        />
+        {outsourcingMode === "labor" ? (
+          <>
+            <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
+            <Input
+              label="常用単価 円/人工"
+              value={laborUnitPrice}
+              setValue={setLaborUnitPrice}
+              type="number"
+            />
+          </>
+        ) : (
+          <Input
+            label="請負単価 円/㎡"
+            value={outsourcingSqmUnitPrice}
+            setValue={setOutsourcingSqmUnitPrice}
+            type="number"
+          />
+        )}
+        {showDirectLaborInput && (
+          <Input
+            label="外注費 円"
+            value={directLabor}
+            setValue={setDirectLabor}
+            type="number"
+          />
+        )}
+        <ReadonlyMetric label="外注費" value={yen(totals.labor)} />
+      </Section>
+
+      <Divider />
+
+      <Section title="④ 経費">
         <RadioGroup
           label="交通費方式"
           value={transportFeeMethod}
           setValue={handleTransportFeeMethodChange}
-          options={TRANSPORT_FEE_METHODS}
+          options={TRANSPORT_METHOD_OPTIONS}
         />
-
-        {transportFeeMethod === "gps" ? (
-          <div style={s.transportCalcBox}>
-            <p style={s.resultLabel}>交通費（自動計算）</p>
-            <p style={s.readOnlyValue}>{yen(totals.transportCost)}</p>
-            <p style={s.hint}>
-              {Number(distanceKm || 0)}km × ¥{activeKmRate}/km（
-              {activeTripType === "roundTrip" ? "往復" : "片道"}）
-            </p>
-          </div>
-        ) : (
-          <Input
-            label="交通費 円"
-            value={fixedTransport}
-            setValue={setFixedTransport}
-            type="number"
+        {transportFeeMethod === "gps" && (
+          <SiteTransportSection
+            company={company}
+            siteAddress={siteAddress}
+            distanceKm={distanceKm}
+            currentLat={currentLat}
+            currentLng={currentLng}
+            currentLocationLabel={currentLocationLabel}
+            onLocationChange={({ lat, lng, label }) => {
+              setCurrentLat(lat);
+              setCurrentLng(lng);
+              setCurrentLocationLabel(label);
+            }}
+            onDistanceChange={setDistanceKm}
           />
         )}
-
+        {transportFeeMethod === "gps" ? (
+          <ReadonlyMetric label="交通費" value={yen(totals.transportCost)} large />
+        ) : (
+          <Input label="交通費 円" value={fixedTransport} setValue={setFixedTransport} type="number" />
+        )}
         <Input label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
         <Input label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
+      </Section>
 
-        <div style={s.transportCalcBox}>
-          <p style={s.resultLabel}>交通費合計（原価加算）</p>
-          <p style={{ ...s.readOnlyValue, color: "#ff8a00" }}>{yen(totals.travelCostTotal)}</p>
-        </div>
+      <Divider />
 
-        <Collapsible label="外注費の設定">
-          <Select
-            label="外注費方式"
-            value={outsourcingMode}
-            setValue={setOutsourcingMode}
-            options={OUTSOURCING_MODES}
-          />
-          {outsourcingMode === "labor" ? (
-            <>
-              <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
-              <Input
-                label="常用単価 円/人工"
-                value={laborUnitPrice}
-                setValue={setLaborUnitPrice}
-                type="number"
-              />
-            </>
-          ) : (
-            <Input
-              label="請負単価 円/㎡"
-              value={outsourcingSqmUnitPrice}
-              setValue={setOutsourcingSqmUnitPrice}
-              type="number"
-            />
-          )}
-          {showDirectLaborInput && (
-            <Input
-              label="外注費（直接入力） 円"
-              value={directLabor}
-              setValue={setDirectLabor}
-              type="number"
-            />
-          )}
-
-          <Input label="貼り手間 円/㎡" value={pasteLabor} setValue={setPasteLabor} type="number" />
-        </Collapsible>
-      </section>
-
-      <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>3. 売価</h2>
+      <Section title="⑤ 売価">
         <Input
           label="販売単価 円/㎡"
           value={sellingUnitPrice}
@@ -459,95 +500,71 @@ export default function EstimateForm({
           setValue={setTargetProfitRate}
           type="number"
         />
+        <ReadonlyMetric
+          label="推奨販売単価"
+          value={
+            profitSimulator.canCalculate
+              ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
+              : "—"
+          }
+          large
+        />
+        <button
+          type="button"
+          style={s.estimateApplyBtn}
+          disabled={!profitSimulator.canCalculate}
+          onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+        >
+          販売単価へ反映
+        </button>
+      </Section>
 
-        <Collapsible label="利益シミュレーター">
-          <Input
-            label="希望利益率 %"
-            value={targetProfitRate}
-            setValue={setTargetProfitRate}
-            type="number"
+      <Divider />
+
+      <Section title="⑥ 結果">
+        <div style={s.estimateResultSubGrid}>
+          <ReadonlyMetric label="売上" value={yen(totals.sales)} />
+          <ReadonlyMetric label="原価" value={yen(totals.cost)} />
+        </div>
+        <div style={s.estimateHeroGrid}>
+          <HeroResultCard
+            label="利益"
+            value={yen(totals.profit)}
+            color={totals.profit >= 0 ? "#fff" : "#ef4444"}
+            borderColor={totals.profit >= 0 ? "#ff8a00" : "#ef4444"}
           />
-          <Input
-            label="希望利益額 円"
-            value={desiredProfitAmount}
-            setValue={setDesiredProfitAmount}
-            type="number"
+          <HeroResultCard
+            label="利益率"
+            value={rateText}
+            color={profitRateBand.color}
+            borderColor={profitRateBand.color}
           />
-          <div style={s.result}>
-            <p style={s.resultLabel}>原価合計</p>
-            <p style={s.statValue}>{yen(profitSimulator.totalCost)}</p>
-            <p style={{ ...s.resultLabel, marginTop: 12 }}>推奨販売単価</p>
-            <p style={s.statValue}>
-              {profitSimulator.canCalculate
-                ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
-                : "—"}
-            </p>
-            {profitSimulator.message && (
-              <p style={{ ...s.hint, marginTop: 12, color: "#ff8a00" }}>{profitSimulator.message}</p>
-            )}
-          </div>
-          <button
-            type="button"
-            style={{ ...s.secondary, width: "100%" }}
-            disabled={!profitSimulator.canCalculate}
-            onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
-          >
-            推奨販売単価を販売単価へ反映
-          </button>
-        </Collapsible>
-      </section>
+          <HeroResultCard
+            label="判定"
+            value={judgmentText}
+            color={profitRateBand.color}
+            borderColor={profitRateBand.color}
+          />
+        </div>
+      </Section>
 
-      <section style={s.blockSection}>
-        <h2 style={s.blockTitle}>4. 結果</h2>
-        {pro ? (
-          <>
-            <div style={s.statGrid}>
-              <ReadOnlyStat label="売上" value={yen(totals.sales)} />
-              <ReadOnlyStat label="原価" value={yen(totals.cost)} />
-              <ReadOnlyStat
-                label="利益"
-                value={yen(totals.profit)}
-                color={totals.profit >= 0 ? "#fff" : "#ef4444"}
-              />
-              <ReadOnlyStat
-                label="利益率"
-                value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
-                color={totals.sales > 0 ? profitRateBand.color : "#888"}
-              />
-            </div>
-            <span style={s.proBadge}>プロプラン · AI利益診断</span>
-            <AiProfitDiagnosis
-              totals={{ ...totals, area }}
-              targetProfitRate={targetProfitRate}
-            />
-          </>
-        ) : (
-          <>
-            <ReadOnlyStat
-              label="利益率"
-              value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
-              color={totals.sales > 0 ? profitRateBand.color : "#888"}
-            />
-            <p style={s.ceoCommentLocked}>{PRO_PLAN_UPGRADE_MESSAGE}</p>
-          </>
-        )}
-      </section>
-
-      <div style={s.formActions}>
-        <button style={s.save} onClick={() => onSave(buildEstimate())}>
-          {editing ? "保存" : "保存する"}
+      <div style={s.estimateActions}>
+        <button style={s.save} type="button" onClick={() => onSave(buildEstimate())}>
+          見積を保存
         </button>
         <button
           style={{ ...s.pdf, opacity: pdfEnabled ? 1 : 0.5 }}
-          onClick={() => {
-            if (!pdfEnabled) {
-              onPdfBlocked?.();
-              return;
-            }
-            onPdf(buildEstimate());
-          }}
+          type="button"
+          onClick={() => handlePdf("estimate")}
         >
-          印刷
+          見積書印刷
+        </button>
+        <button
+          style={{ ...s.estimateInvoiceBtn, opacity: pdfEnabled ? 1 : 0.5 }}
+          type="button"
+          onClick={() => handlePdf("invoice")}
+        >
+          請求書印刷
         </button>
       </div>
     </main>
