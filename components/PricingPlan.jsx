@@ -4,6 +4,7 @@ import {
   formatBillingYen,
   getUsageSummary,
 } from "../lib/billing";
+import { getPlanLabel, isProPlan, PLAN_FREE, PLAN_PRO } from "../lib/plan";
 import { s } from "../lib/styles";
 
 function PlanRow({ label, value, highlight }) {
@@ -24,13 +25,34 @@ function PlanSection({ title, children }) {
   );
 }
 
-export default function PricingPlan({ clients, estimates, onBack }) {
+export default function PricingPlan({ clients, estimates, plan, onSetPlan, onBack }) {
   const usage = getUsageSummary(clients.length, estimates.length);
+  const pro = isProPlan(plan);
 
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>料金プラン</h1>
+
+      <PlanSection title="ご利用プラン">
+        <PlanRow label="現在のプラン" value={getPlanLabel(plan)} highlight={pro} />
+        <PlanRow
+          label="AI利益診断"
+          value={pro ? "利用可" : "プロプラン限定"}
+        />
+        <PlanRow
+          label="AI社長コメント"
+          value={pro ? "利用可" : "プロプラン限定"}
+        />
+        <button
+          type="button"
+          style={{ ...s.secondary, width: "100%", marginTop: 8 }}
+          onClick={() => onSetPlan(pro ? PLAN_FREE : PLAN_PRO)}
+        >
+          {pro ? "無料プランに切替（デモ）" : "プロプランに切替（デモ）"}
+        </button>
+        <p style={s.planNote}>※ 決済連携前のデモ切替です</p>
+      </PlanSection>
 
       <PlanSection title="無料枠">
         <PlanRow label="元請管理" value={`${FREE_CLIENT_LIMIT}件まで無料`} />

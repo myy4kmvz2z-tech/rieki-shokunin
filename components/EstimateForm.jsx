@@ -11,10 +11,11 @@ import {
   calcEstimateTotals,
   calcProfitSimulator,
   getCostStructureForClient,
-  getProfitImprovementAdvice,
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
+import { isProPlan } from "../lib/plan";
+import AiProfitDiagnosis from "./AiProfitDiagnosis";
 import {
   getInitialTransportState,
   TRANSPORT_MODES,
@@ -128,6 +129,7 @@ function syncFromClient(fromClient) {
 export default function EstimateForm({
   clients,
   company,
+  plan,
   onBack,
   onSave,
   onPdf,
@@ -236,14 +238,8 @@ export default function EstimateForm({
     desiredProfitRate: targetProfitRate,
     desiredProfitAmount,
   });
-  const profitAdvice = getProfitImprovementAdvice({
-    rate: totals.rate,
-    totalCost: totals.cost,
-    area,
-    effectiveSellingUnitPrice: totals.effectiveSellingUnitPrice,
-    discount: totals.discount,
-  });
   const profitRateBand = getProfitRateColorBand(totals.rate);
+  const pro = isProPlan(plan);
   const showDirectLaborInput =
     (outsourcingMode === "labor" && Number(laborCount || 0) <= 0) ||
     (outsourcingMode === "sqm" && Number(outsourcingSqmUnitPrice || 0) <= 0);
@@ -435,51 +431,38 @@ export default function EstimateForm({
 
       <section style={s.blockSection}>
         <h2 style={s.blockTitle}>4. 結果</h2>
-        <div style={s.statGrid}>
-          <ReadOnlyStat label="売上" value={yen(totals.sales)} />
-          <ReadOnlyStat label="原価" value={yen(totals.cost)} />
-          <ReadOnlyStat
-            label="利益"
-            value={yen(totals.profit)}
-            color={totals.profit >= 0 ? "#fff" : "#ef4444"}
-          />
-          <ReadOnlyStat
-            label="利益率"
-            value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
-            color={totals.sales > 0 ? profitRateBand.color : "#888"}
-          />
-        </div>
-        <div style={{ ...s.statItem, marginTop: 4 }}>
-          <p style={s.resultLabel}>判定</p>
-          <p
-            style={{
-              ...s.statValue,
-              fontSize: 18,
-              color: totals.sales > 0 ? profitAdvice.color : "#888",
-            }}
-          >
-            {totals.sales > 0
-              ? `${profitAdvice.icon} ${profitAdvice.message}`
-              : "—"}
-          </p>
-        </div>
-
-        <Collapsible label="利益改善アドバイス">
-          {totals.sales > 0 ? (
-            <>
-              <p style={{ ...s.resultDetail, color: profitAdvice.color, fontWeight: 900 }}>
-                {profitAdvice.icon} {profitAdvice.message}
-              </p>
-              {profitAdvice.improvementMessage && (
-                <p style={{ ...s.resultDetail, marginTop: 8, lineHeight: 1.7 }}>
-                  {profitAdvice.improvementMessage}
-                </p>
-              )}
-            </>
-          ) : (
-            <p style={s.resultDetail}>売上を入力してください。</p>
-          )}
-        </Collapsible>
+        {pro ? (
+          <>
+            <div style={s.statGrid}>
+              <ReadOnlyStat label="売上" value={yen(totals.sales)} />
+              <ReadOnlyStat label="原価" value={yen(totals.cost)} />
+              <ReadOnlyStat
+                label="利益"
+                value={yen(totals.profit)}
+                color={totals.profit >= 0 ? "#fff" : "#ef4444"}
+              />
+              <ReadOnlyStat
+                label="利益率"
+                value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
+                color={totals.sales > 0 ? profitRateBand.color : "#888"}
+              />
+            </div>
+            <span style={s.proBadge}>プロプラン · AI利益診断</span>
+            <AiProfitDiagnosis
+              totals={{ ...totals, area }}
+              targetProfitRate={targetProfitRate}
+            />
+          </>
+        ) : (
+          <>
+            <ReadOnlyStat
+              label="利益率"
+              value={totals.sales > 0 ? `${Number(totals.rate || 0).toFixed(1)}%` : "—"}
+              color={totals.sales > 0 ? profitRateBand.color : "#888"}
+            />
+            <p style={s.ceoCommentLocked}>プロプランでAI利益診断が利用できます。</p>
+          </>
+        )}
       </section>
 
       <div style={s.formActions}>

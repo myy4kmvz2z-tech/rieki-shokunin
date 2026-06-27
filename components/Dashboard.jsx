@@ -1,8 +1,9 @@
 import { buildDashboard, yen } from "../utils/calcProfit";
+import CeoCommentCard from "./CeoCommentCard";
 import UsageCard from "./UsageCard";
 import { s } from "../lib/styles";
 
-export default function Dashboard({ estimates, clients }) {
+export default function Dashboard({ estimates, clients, plan }) {
   const stats = buildDashboard(estimates);
 
   return (
@@ -27,6 +28,7 @@ export default function Dashboard({ estimates, clients }) {
         </section>
       </div>
 
+      <CeoCommentCard estimates={estimates} plan={plan} />
       <UsageCard clientCount={clients.length} estimateCount={estimates.length} />
     </>
   );

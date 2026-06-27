@@ -13,6 +13,7 @@ import PdfInvoice from "../components/PdfInvoice";
 import { useClients } from "../hooks/useClients";
 import { useCompany } from "../hooks/useCompany";
 import { useEstimates } from "../hooks/useEstimates";
+import { usePlan } from "../hooks/usePlan";
 import { ESTIMATE_BILLING_CONFIRM_MESSAGE, requiresEstimateBillingConfirm } from "../lib/billing";
 import { s } from "../lib/styles";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
@@ -22,6 +23,7 @@ export default function Page() {
   const { estimates, saveAll } = useEstimates();
   const { clients, saveClients } = useClients();
   const { company, saveCompany } = useCompany();
+  const { plan, setPlan } = usePlan();
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -81,6 +83,7 @@ export default function Page() {
       <EstimateForm
         clients={clients}
         company={company}
+        plan={plan}
         onBack={() => setScreen("home")}
         onSave={handleNewEstimateSave}
         onPdf={handlePdfOutput}
@@ -92,6 +95,7 @@ export default function Page() {
       <EstimateForm
         clients={clients}
         company={company}
+        plan={plan}
         initialEstimate={editingEstimate}
         onBack={() => {
           setEditingId(null);
@@ -169,6 +173,8 @@ export default function Page() {
       <PricingPlan
         clients={clients}
         estimates={estimates}
+        plan={plan}
+        onSetPlan={setPlan}
         onBack={() => setScreen("home")}
       />
     );
@@ -176,7 +182,7 @@ export default function Page() {
     content = (
       <main style={s.page}>
         <p style={s.kicker}>利益職人</p>
-        <Dashboard estimates={estimates} clients={clients} />
+        <Dashboard estimates={estimates} clients={clients} plan={plan} />
         <nav style={s.menuGroup}>
           <button style={s.btnPrimary} onClick={() => setScreen("new")}>
             見積を作る
