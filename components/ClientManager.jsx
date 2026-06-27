@@ -9,8 +9,17 @@ import {
   PRICE_FIELDS,
   PROFIT_SETTING_FIELDS,
 } from "../lib/constants";
+import {
+  CLIENT_BILLING_CONFIRM_MESSAGE,
+  FREE_CLIENT_LIMIT,
+  isPaidClient,
+  requiresClientBillingConfirm,
+} from "../lib/billing";
 import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
+import BillingBadge from "./BillingBadge";
+import ConfirmModal from "./ConfirmModal";
+import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
 function ClientSettingsForm({ form, setField }) {
@@ -99,11 +108,12 @@ function ClientFieldList({ client }) {
   );
 }
 
-export default function ClientManager({ clients, onBack, onSave }) {
+export default function ClientManager({ clients, onBack, onSave, estimateCount = 0 }) {
   const [form, setForm] = useState(emptyClientForm());
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyClientForm());
   const [showAddForm, setShowAddForm] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   const updateForm = (setter) => (key, value) => {
     setter((prev) => ({ ...prev, [key]: value }));
@@ -122,9 +132,19 @@ export default function ClientManager({ clients, onBack, onSave }) {
       alert("同じ名前の元請が既に登録されています。");
       return;
     }
+    if (requiresClientBillingConfirm(clients.length)) {
+      setShowBillingModal(true);
+      return;
+    }
+    confirmAdd();
+  };
+
+  const confirmAdd = () => {
+    const name = form.name.trim();
     onSave([...clients, normalizeClient({ ...form, name, id: Date.now() })]);
     setForm(emptyClientForm());
     setShowAddForm(false);
+    setShowBillingModal(false);
   };
 
   const startEdit = (client) => {
@@ -168,6 +188,12 @@ export default function ClientManager({ clients, onBack, onSave }) {
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>元請管理</h1>
 
+      <UsageCard clientCount={clients.length} estimateCount={estimateCount} compact />
+      <p style={s.usageNote}>
+        現在の元請数：{clients.length}件 / 無料枠{FREE_CLIENT_LIMIT}件
+      </p>
+      <p style={{ ...s.usageNote, marginBottom: 16 }}>4件目以降は5件ごとに500円</p>
+
       {!showAddForm ? (
         <button style={s.btnPrimary} onClick={() => setShowAddForm(true)}>
           ＋ 元請を追加
@@ -203,7 +229,10 @@ export default function ClientManager({ clients, onBack, onSave }) {
               </>
             ) : (
               <>
-                <h2 style={{ ...s.sectionTitle, marginBottom: 16 }}>{client.name}</h2>
+                <div style={s.cardHeaderRow}>
+                  <h2 style={{ ...s.sectionTitle, margin: 0 }}>{client.name}</h2>
+                  {isPaidClient(clients, client.id) && <BillingBadge />}
+                </div>
                 <ClientFieldList client={client} />
                 <div style={{ ...s.rowActions, marginTop: 16 }}>
                   <button style={s.editBtn} onClick={() => startEdit(client)}>編集</button>
@@ -214,6 +243,14 @@ export default function ClientManager({ clients, onBack, onSave }) {
           </section>
         ))
       )}
+
+      <ConfirmModal
+        open={showBillingModal}
+        message={CLIENT_BILLING_CONFIRM_MESSAGE}
+        confirmLabel="追加する"
+        onConfirm={confirmAdd}
+        onCancel={() => setShowBillingModal(false)}
+      />
     </main>
   );
 }

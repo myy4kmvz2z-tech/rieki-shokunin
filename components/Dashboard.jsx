@@ -1,7 +1,8 @@
 import { buildDashboard, yen } from "../utils/calcProfit";
+import UsageCard from "./UsageCard";
 import { s } from "../lib/styles";
 
-export default function Dashboard({ estimates }) {
+export default function Dashboard({ estimates, clients }) {
   const stats = buildDashboard(estimates);
 
   return (
@@ -25,6 +26,8 @@ export default function Dashboard({ estimates }) {
           <p style={s.miniCount}>{stats.estimateCount}件</p>
         </section>
       </div>
+
+      <UsageCard clientCount={clients.length} estimateCount={estimates.length} />
     </>
   );
 }

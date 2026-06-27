@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import ClientManager from "../components/ClientManager";
 import CompanySettings from "../components/CompanySettings";
+import ConfirmModal from "../components/ConfirmModal";
 import Dashboard from "../components/Dashboard";
 import EstimateForm from "../components/EstimateForm";
 import EstimateList from "../components/EstimateList";
@@ -11,6 +12,7 @@ import PdfInvoice from "../components/PdfInvoice";
 import { useClients } from "../hooks/useClients";
 import { useCompany } from "../hooks/useCompany";
 import { useEstimates } from "../hooks/useEstimates";
+import { ESTIMATE_BILLING_CONFIRM_MESSAGE, requiresEstimateBillingConfirm } from "../lib/billing";
 import { s } from "../lib/styles";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
@@ -22,6 +24,8 @@ export default function Page() {
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [pendingEstimate, setPendingEstimate] = useState(null);
+  const [showEstimateBillingModal, setShowEstimateBillingModal] = useState(false);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -47,6 +51,28 @@ export default function Page() {
     setShouldPrint(true);
   };
 
+  const saveNewEstimate = (estimate) => {
+    saveAll([estimate, ...estimates]);
+    setScreen("list");
+  };
+
+  const handleNewEstimateSave = (estimate) => {
+    if (requiresEstimateBillingConfirm(estimates.length)) {
+      setPendingEstimate(estimate);
+      setShowEstimateBillingModal(true);
+      return;
+    }
+    saveNewEstimate(estimate);
+  };
+
+  const confirmEstimateSave = () => {
+    if (pendingEstimate) {
+      saveNewEstimate(pendingEstimate);
+    }
+    setPendingEstimate(null);
+    setShowEstimateBillingModal(false);
+  };
+
   let content;
 
   if (screen === "new") {
@@ -55,10 +81,7 @@ export default function Page() {
         clients={clients}
         company={company}
         onBack={() => setScreen("home")}
-        onSave={(e) => {
-          saveAll([e, ...estimates]);
-          setScreen("list");
-        }}
+        onSave={handleNewEstimateSave}
         onPdf={handlePdfOutput}
       />
     );
@@ -98,6 +121,7 @@ export default function Page() {
     content = (
       <EstimateList
         estimates={estimates}
+        clientCount={clients.length}
         onBack={() => setScreen("home")}
         onEdit={(id) => {
           setEditingId(id);
@@ -126,6 +150,7 @@ export default function Page() {
     content = (
       <ClientManager
         clients={clients}
+        estimateCount={estimates.length}
         onBack={() => setScreen("home")}
         onSave={saveClients}
       />
@@ -142,7 +167,7 @@ export default function Page() {
     content = (
       <main style={s.page}>
         <p style={s.kicker}>利益職人</p>
-        <Dashboard estimates={estimates} />
+        <Dashboard estimates={estimates} clients={clients} />
         <nav style={s.menuGroup}>
           <button style={s.btnPrimary} onClick={() => setScreen("new")}>
             見積を作る
@@ -164,6 +189,16 @@ export default function Page() {
   return (
     <>
       <div className="no-print">{content}</div>
+      <ConfirmModal
+        open={showEstimateBillingModal}
+        message={ESTIMATE_BILLING_CONFIRM_MESSAGE}
+        confirmLabel="保存する"
+        onConfirm={confirmEstimateSave}
+        onCancel={() => {
+          setPendingEstimate(null);
+          setShowEstimateBillingModal(false);
+        }}
+      />
       {printDoc && (
         <div className="paper">
           {printDoc.type === "invoice" ? (
