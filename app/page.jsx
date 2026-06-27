@@ -23,7 +23,10 @@ import {
 import { s } from "../lib/styles";
 import SiteMasterManager from "../components/SiteMasterManager";
 import { useSiteMasters } from "../hooks/useSiteMasters";
+import { useQuickEstimateUsage } from "../hooks/useQuickEstimateUsage";
+import { findSiteMaster } from "../lib/siteMaster";
 import { prepareEstimateCopy } from "../utils/estimateCopy";
+import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
 export default function Page() {
@@ -33,10 +36,12 @@ export default function Page() {
   const { company, saveCompany } = useCompany();
   const { plan, setPlan } = usePlan();
   const { siteMasters, saveAll: saveSiteMasters } = useSiteMasters();
+  const { usage: quickEstimateUsage, recordUsage } = useQuickEstimateUsage();
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [copySourceId, setCopySourceId] = useState(null);
+  const [quickEstimateTarget, setQuickEstimateTarget] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
 
@@ -98,6 +103,12 @@ export default function Page() {
 
   const handleMarkPaid = (id) => {
     updateEstimate(id, { paymentStatus: PAYMENT_PAID });
+  };
+
+  const handleQuickEstimate = (client, workType) => {
+    recordUsage(client, workType);
+    setQuickEstimateTarget({ client, workType });
+    setScreen("quickEstimate");
   };
 
   let content;
@@ -192,6 +203,48 @@ export default function Page() {
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
+  } else if (screen === "quickEstimate") {
+    const master = quickEstimateTarget
+      ? findSiteMaster(siteMasters, quickEstimateTarget.client, quickEstimateTarget.workType)
+      : null;
+    content = master ? (
+      <EstimateForm
+        clients={clients}
+        siteMasters={siteMasters}
+        company={company}
+        plan={plan}
+        isQuickEstimate
+        initialEstimate={siteMasterToQuickEstimateInitial(master)}
+        onBack={() => {
+          setQuickEstimateTarget(null);
+          setScreen("home");
+        }}
+        onSave={(estimate) => {
+          if (!canSaveEstimate(plan, estimates.length)) {
+            setShowEstimateLimitModal(true);
+            return;
+          }
+          saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
+          setQuickEstimateTarget(null);
+        }}
+        onPdf={handlePdfOutput}
+        onInvoicePdf={handleInvoicePdfOutput}
+        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
+      />
+    ) : (
+      <main style={s.page}>
+        <button
+          style={s.back}
+          onClick={() => {
+            setQuickEstimateTarget(null);
+            setScreen("home");
+          }}
+        >
+          ← 戻る
+        </button>
+        <p style={s.muted}>現場マスターが見つかりませんでした。</p>
+      </main>
+    );
   } else if (screen === "siteMasters") {
     content = (
       <SiteMasterManager
@@ -272,6 +325,9 @@ export default function Page() {
           estimates={estimates}
           plan={plan}
           company={company}
+          siteMasters={siteMasters}
+          quickEstimateUsage={quickEstimateUsage}
+          onQuickEstimate={handleQuickEstimate}
           onNewEstimate={() => setScreen("new")}
           onSiteMasters={() => setScreen("siteMasters")}
           onList={() => setScreen("list")}

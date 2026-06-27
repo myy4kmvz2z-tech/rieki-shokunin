@@ -4,6 +4,7 @@ import { buildCeoDashboard } from "../utils/ceoDashboard";
 import { yen } from "../utils/calcProfit";
 import { getPlanShortLabel } from "../lib/plan";
 import CeoCommentCard from "./CeoCommentCard";
+import QuickEstimatePanel from "./QuickEstimatePanel";
 import { s } from "../lib/styles";
 
 function SectionDivider() {
@@ -30,6 +31,9 @@ export default function Dashboard({
   estimates,
   plan,
   company,
+  siteMasters,
+  quickEstimateUsage,
+  onQuickEstimate,
   onNewEstimate,
   onSiteMasters,
   onList,
@@ -111,6 +115,14 @@ export default function Dashboard({
           </ol>
         )}
       </section>
+
+      <SectionDivider />
+
+      <QuickEstimatePanel
+        siteMasters={siteMasters}
+        usage={quickEstimateUsage}
+        onQuickEstimate={onQuickEstimate}
+      />
 
       <SectionDivider />
 

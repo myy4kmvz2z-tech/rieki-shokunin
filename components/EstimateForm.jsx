@@ -24,6 +24,7 @@ import {
   TRANSPORT_MODE_GPS,
 } from "../utils/calcTransport";
 import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
+import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, LaborCountStepper, Select } from "./FormFields";
@@ -213,11 +214,12 @@ export default function EstimateForm({
   onPdfBlocked,
   initialEstimate,
   isCopy = false,
+  isQuickEstimate = false,
 }) {
-  const editing = !!initialEstimate && !isCopy;
+  const editing = !!initialEstimate && !isCopy && !isQuickEstimate;
   const defaultClient = clients[0]?.name || "";
   const defaultWorkType = initialEstimate?.workType ?? "クロス SP";
-  const skipClientSync = useRef(editing || isCopy);
+  const skipClientSync = useRef(editing || isCopy || isQuickEstimate);
 
   const initialCost = getInitialCostState(
     clients,
@@ -241,7 +243,9 @@ export default function EstimateForm({
   const [siteAddress, setSiteAddress] = useState(initialEstimate?.siteAddress ?? "");
   const [client, setClient] = useState(initialEstimate?.client ?? defaultClient);
   const [workType, setWorkType] = useState(defaultWorkType);
-  const [area, setArea] = useState(initialEstimate?.area ?? 100);
+  const [area, setArea] = useState(
+    isQuickEstimate ? (initialEstimate?.area ?? 0) : (initialEstimate?.area ?? 100)
+  );
   const [material, setMaterial] = useState(initialCost.material);
   const [pasteLabor, setPasteLabor] = useState(initialCost.pasteLabor);
   const [substrate, setSubstrate] = useState(initialCost.substrate);
@@ -351,6 +355,17 @@ export default function EstimateForm({
     desiredProfitRate: targetProfitRate,
     desiredProfitAmount,
   });
+
+  useEffect(() => {
+    if (!isQuickEstimate) return;
+    if (!profitSimulator.canCalculate) return;
+    setSellingUnitPrice(profitSimulator.recommendedUnitPrice);
+  }, [
+    isQuickEstimate,
+    profitSimulator.canCalculate,
+    profitSimulator.recommendedUnitPrice,
+  ]);
+
   const orderJudgment = getOrderJudgment(totals.rate);
   const aiDiagnosis = getAiProfitDiagnosis({
     rate: totals.rate,
@@ -447,70 +462,131 @@ export default function EstimateForm({
     <main style={s.estimatePage}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.estimatePageTitle}>
-        {isCopy ? "見積コピー" : editing ? "見積編集" : "見積作成"}
+        {isQuickEstimate
+          ? "ワンタップ見積"
+          : isCopy
+            ? "見積コピー"
+            : editing
+              ? "見積編集"
+              : "見積作成"}
       </h1>
 
-      <Section title="① 現場情報">
-        <Input large label="現場名" value={siteName} setValue={setSiteName} />
-        <Select large label="元請" value={client} setValue={setClient} options={clientOptions} />
-        <Input large label="現場住所" value={siteAddress} setValue={setSiteAddress} />
-        <Select large label="工事項目" value={workType} setValue={setWorkType} options={WORK_TYPES} />
-        <Input large label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
-      </Section>
-
-      <Divider />
-
-      <Section title="② 原価">
-        <div style={s.estimateCostHero}>
-          <div style={s.estimateHeroDivider} />
-          <p style={s.estimateCostHeroLabel}>原価単価</p>
-          <p style={s.estimateCostHeroValue}>{yen(totals.costUnitPrice)}/㎡</p>
-          <div style={s.estimateHeroDivider} />
+      {isQuickEstimate && (
+        <div style={s.quickEstimateFormHeader}>
+          <p style={s.quickEstimateFormMeta}>
+            {client} · {getQuickWorkTypeLabel(workType)}
+          </p>
+          <p style={s.quickEstimateFormHint}>
+            元請・原価・外注方式・目標利益率は現場マスターから自動入力済みです。
+          </p>
+          <div style={s.estimateCostHero}>
+            <div style={s.estimateHeroDivider} />
+            <p style={s.estimateCostHeroLabel}>原価単価</p>
+            <p style={s.estimateCostHeroValue}>{yen(totals.costUnitPrice)}/㎡</p>
+            <div style={s.estimateHeroDivider} />
+          </div>
         </div>
-        <Input large label="材料費" value={material} setValue={setMaterial} type="number" />
-        <Input large label="貼り手間" value={pasteLabor} setValue={setPasteLabor} type="number" />
-        <Input large label="下地処理" value={substrate} setValue={setSubstrate} type="number" />
-        <Input large label="副資材" value={auxiliary} setValue={setAuxiliary} type="number" />
-        <Input large label="廃材処分" value={waste} setValue={setWaste} type="number" />
-      </Section>
+      )}
 
-      <Divider />
-
-      <Section title="③ 外注">
-        <CardButtonGroup
-          value={outsourcingMode}
-          setValue={setOutsourcingMode}
-          options={OUTSOURCING_MODE_OPTIONS}
-        />
-        {outsourcingMode === "labor" && (
+      <Section title={isQuickEstimate ? "① 現場・面積" : "① 現場情報"}>
+        <Input large label="現場名" value={siteName} setValue={setSiteName} />
+        {!isQuickEstimate && (
           <>
-            <LaborCountStepper value={laborCount} setValue={setLaborCount} large />
-            <Input
+            <Select large label="元請" value={client} setValue={setClient} options={clientOptions} />
+            <Input large label="現場住所" value={siteAddress} setValue={setSiteAddress} />
+            <Select
               large
-              label="常用単価 円/人工"
-              value={laborUnitPrice}
-              setValue={setLaborUnitPrice}
-              type="number"
+              label="工事項目"
+              value={workType}
+              setValue={setWorkType}
+              options={WORK_TYPES}
             />
           </>
         )}
-        {outsourcingMode === "sqm" && (
-          <Input
-            large
-            label="請負単価 円/㎡"
-            value={outsourcingSqmUnitPrice}
-            setValue={setOutsourcingSqmUnitPrice}
-            type="number"
-          />
-        )}
-        {showDirectLaborInput && (
-          <Input large label="外注費 円" value={directLabor} setValue={setDirectLabor} type="number" />
-        )}
+        <Input large label="施工面積 ㎡" value={area} setValue={setArea} type="number" />
       </Section>
+
+      {!isQuickEstimate && (
+        <>
+          <Divider />
+
+          <Section title="② 原価">
+            <div style={s.estimateCostHero}>
+              <div style={s.estimateHeroDivider} />
+              <p style={s.estimateCostHeroLabel}>原価単価</p>
+              <p style={s.estimateCostHeroValue}>{yen(totals.costUnitPrice)}/㎡</p>
+              <div style={s.estimateHeroDivider} />
+            </div>
+            <Input large label="材料費" value={material} setValue={setMaterial} type="number" />
+            <Input large label="貼り手間" value={pasteLabor} setValue={setPasteLabor} type="number" />
+            <Input large label="下地処理" value={substrate} setValue={setSubstrate} type="number" />
+            <Input large label="副資材" value={auxiliary} setValue={setAuxiliary} type="number" />
+            <Input large label="廃材処分" value={waste} setValue={setWaste} type="number" />
+          </Section>
+        </>
+      )}
+
+      {(isQuickEstimate ? outsourcingMode === "labor" : true) && (
+        <>
+          <Divider />
+
+          <Section title={isQuickEstimate ? "② 外注数量" : "③ 外注"}>
+            {!isQuickEstimate && (
+              <CardButtonGroup
+                value={outsourcingMode}
+                setValue={setOutsourcingMode}
+                options={OUTSOURCING_MODE_OPTIONS}
+              />
+            )}
+            {outsourcingMode === "labor" && (
+              <>
+                <LaborCountStepper value={laborCount} setValue={setLaborCount} large />
+                {!isQuickEstimate && (
+                  <Input
+                    large
+                    label="常用単価 円/人工"
+                    value={laborUnitPrice}
+                    setValue={setLaborUnitPrice}
+                    type="number"
+                  />
+                )}
+              </>
+            )}
+            {!isQuickEstimate && outsourcingMode === "sqm" && (
+              <Input
+                large
+                label="請負単価 円/㎡"
+                value={outsourcingSqmUnitPrice}
+                setValue={setOutsourcingSqmUnitPrice}
+                type="number"
+              />
+            )}
+            {!isQuickEstimate && showDirectLaborInput && (
+              <Input
+                large
+                label="外注費 円"
+                value={directLabor}
+                setValue={setDirectLabor}
+                type="number"
+              />
+            )}
+          </Section>
+        </>
+      )}
 
       <Divider />
 
-      <Section title="④ 経費">
+      <Section title={isQuickEstimate ? (outsourcingMode === "labor" ? "③ 交通費" : "② 交通費") : "④ 経費"}>
+        {isQuickEstimate ? (
+          <Input
+            large
+            label="交通費 円"
+            value={fixedTransport}
+            setValue={setFixedTransport}
+            type="number"
+          />
+        ) : (
+          <>
         <CardButtonGroup
           value={transportFeeMethod}
           setValue={handleTransportFeeMethodChange}
@@ -585,45 +661,51 @@ export default function EstimateForm({
             <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
           </>
         )}
+          </>
+        )}
       </Section>
 
-      <Divider />
+      {!isQuickEstimate && (
+        <>
+          <Divider />
 
-      <Section title="⑤ 売価">
-        <Input
-          large
-          label="販売単価 円/㎡"
-          value={sellingUnitPrice}
-          setValue={setSellingUnitPrice}
-          type="number"
-        />
-        <div style={s.estimateReadonlyLarge}>
-          <p style={s.estimateReadonlyLabel}>推奨販売単価</p>
-          <p style={s.estimateReadonlyValueLarge}>
-            {profitSimulator.canCalculate
-              ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
-              : "—"}
-          </p>
-        </div>
-        <button
-          type="button"
-          style={s.estimateApplyBtn}
-          disabled={!profitSimulator.canCalculate}
-          onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
-        >
-          販売単価へ反映
-        </button>
-        <Collapsible label="詳細（値引き・目標利益率）">
-          <Input large label="値引き 円" value={discount} setValue={setDiscount} type="number" />
-          <Input
-            large
-            label="目標利益率 %"
-            value={targetProfitRate}
-            setValue={setTargetProfitRate}
-            type="number"
-          />
-        </Collapsible>
-      </Section>
+          <Section title="⑤ 売価">
+            <Input
+              large
+              label="販売単価 円/㎡"
+              value={sellingUnitPrice}
+              setValue={setSellingUnitPrice}
+              type="number"
+            />
+            <div style={s.estimateReadonlyLarge}>
+              <p style={s.estimateReadonlyLabel}>推奨販売単価</p>
+              <p style={s.estimateReadonlyValueLarge}>
+                {profitSimulator.canCalculate
+                  ? `${yen(profitSimulator.recommendedUnitPrice)}/㎡`
+                  : "—"}
+              </p>
+            </div>
+            <button
+              type="button"
+              style={s.estimateApplyBtn}
+              disabled={!profitSimulator.canCalculate}
+              onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+            >
+              販売単価へ反映
+            </button>
+            <Collapsible label="詳細（値引き・目標利益率）">
+              <Input large label="値引き 円" value={discount} setValue={setDiscount} type="number" />
+              <Input
+                large
+                label="目標利益率 %"
+                value={targetProfitRate}
+                setValue={setTargetProfitRate}
+                type="number"
+              />
+            </Collapsible>
+          </Section>
+        </>
+      )}
 
       <ResultCard
         sales={yen(totals.sales)}
