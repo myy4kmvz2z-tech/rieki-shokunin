@@ -28,6 +28,12 @@ function waitForPaint() {
   });
 }
 
+async function waitForRenderReady() {
+  await waitForPaint();
+  await waitForPaint();
+  await new Promise((resolve) => setTimeout(resolve, 120));
+}
+
 export async function elementToPdfBlob(element) {
   if (!element) {
     throw new Error("PDF生成対象が見つかりません。");
@@ -41,31 +47,45 @@ export async function elementToPdfBlob(element) {
   const canvas = await html2canvas(element, {
     scale: 2,
     useCORS: true,
+    allowTaint: true,
     backgroundColor: "#ffffff",
     logging: false,
+    width: element.scrollWidth,
+    height: element.scrollHeight,
+    windowWidth: element.scrollWidth,
+    windowHeight: element.scrollHeight,
   });
+
+  if (!canvas.width || !canvas.height) {
+    throw new Error("PDFの描画に失敗しました。");
+  }
 
   const pdf = new jsPDF("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const imgWidth = pageWidth;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  const imgData = canvas.toDataURL("image/png");
+  const imgData = canvas.toDataURL("image/jpeg", 0.95);
 
   let heightLeft = imgHeight;
   let position = 0;
 
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
   heightLeft -= pageHeight;
 
   while (heightLeft > 0) {
     position = heightLeft - imgHeight;
     pdf.addPage();
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
     heightLeft -= pageHeight;
   }
 
-  return pdf.output("blob");
+  const blob = pdf.output("blob");
+  if (!blob || blob.size === 0) {
+    throw new Error("PDFファイルの生成に失敗しました。");
+  }
+
+  return blob;
 }
 
 export function canSharePdfFiles() {
@@ -74,40 +94,51 @@ export function canSharePdfFiles() {
   }
 
   if (typeof navigator.canShare !== "function") {
-    return false;
+    return /iphone|ipad|ipod|android/i.test(navigator.userAgent || "");
   }
 
   try {
-    const file = new File(["test"], "test.pdf", { type: "application/pdf" });
+    const file = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], "test.pdf", {
+      type: "application/pdf",
+    });
     return navigator.canShare({ files: [file] });
   } catch {
     return false;
   }
 }
 
-export async function sharePdfFile(blob, filename) {
-  const file = new File([blob], filename, { type: "application/pdf" });
-  await navigator.share({
-    files: [file],
-    title: filename,
-  });
+export function createPdfFile(blob, filename) {
+  return new File([blob], filename, { type: "application/pdf" });
 }
 
-export function downloadPdfFile(blob, filename) {
-  const url = URL.createObjectURL(blob);
+export async function sharePdfFile(fileOrBlob, filename) {
+  const file =
+    fileOrBlob instanceof File ? fileOrBlob : createPdfFile(fileOrBlob, filename);
+  const shareData = { files: [file], title: filename };
+
+  if (typeof navigator.canShare === "function" && !navigator.canShare(shareData)) {
+    throw new Error("SHARE_UNSUPPORTED");
+  }
+
+  await navigator.share(shareData);
+}
+
+export function downloadPdfFile(fileOrBlob, filename) {
+  const url = URL.createObjectURL(fileOrBlob);
   const link = document.createElement("a");
   link.href = url;
   link.download = filename;
+  link.rel = "noopener";
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export async function createPdfFromHost(hostElement, type, siteName) {
-  const paper = hostElement?.querySelector(".paper");
-  await waitForPaint();
-  const blob = await elementToPdfBlob(paper);
+export async function createPdfFromElement(element, type, siteName) {
+  await waitForRenderReady();
+  const blob = await elementToPdfBlob(element);
   const filename = buildPdfFilename(type, siteName);
-  return { blob, filename, type };
+  const file = createPdfFile(blob, filename);
+  return { blob, file, filename, type };
 }

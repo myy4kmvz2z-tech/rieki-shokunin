@@ -26,6 +26,7 @@ import {
 import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
+import PdfActionButtons from "./PdfActionButtons";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, LaborCountStepper, Select } from "./FormFields";
 
@@ -209,8 +210,8 @@ export default function EstimateForm({
   plan,
   onBack,
   onSave,
-  onPdf,
-  onInvoicePdf,
+  onGeneratePdf,
+  isPdfGenerating = false,
   onPdfBlocked,
   initialEstimate,
   isCopy = false,
@@ -282,6 +283,8 @@ export default function EstimateForm({
     initialTransport.currentLocationLabel
   );
   const [showTransportDetails, setShowTransportDetails] = useState(false);
+  const [pdfReady, setPdfReady] = useState(null);
+  const [isCreatingPdf, setIsCreatingPdf] = useState(false);
 
   const handleTransportFeeMethodChange = (method) => {
     setTransportFeeMethod(method);
@@ -427,16 +430,18 @@ export default function EstimateForm({
     createdAt: initialEstimate?.createdAt ?? new Date().toLocaleString("ja-JP"),
   });
 
-  const handlePdf = (type) => {
+  const handleCreatePdf = async (type) => {
     if (!pdfEnabled) {
       onPdfBlocked?.();
       return;
     }
-    const estimate = buildEstimate();
-    if (type === "invoice") {
-      onInvoicePdf?.(estimate);
-    } else {
-      onPdf?.(estimate);
+
+    setIsCreatingPdf(true);
+    try {
+      const result = await onGeneratePdf(buildEstimate(), type);
+      setPdfReady(result);
+    } finally {
+      setIsCreatingPdf(false);
     }
   };
 
@@ -722,21 +727,16 @@ export default function EstimateForm({
         <button style={s.save} type="button" onClick={() => onSave(buildEstimate())}>
           見積を保存
         </button>
-        <button
-          style={{ ...s.pdf, opacity: pdfEnabled ? 1 : 0.5 }}
-          type="button"
-          onClick={() => handlePdf("estimate")}
-        >
-          見積書印刷
-        </button>
-        <button
-          style={{ ...s.estimateInvoiceBtn, opacity: pdfEnabled ? 1 : 0.5 }}
-          type="button"
-          onClick={() => handlePdf("invoice")}
-        >
-          請求書印刷
-        </button>
       </div>
+
+      <PdfActionButtons
+        plan={plan}
+        isWorking={isCreatingPdf || isPdfGenerating}
+        pdfReady={pdfReady}
+        onCreateEstimate={() => handleCreatePdf("estimate")}
+        onCreateInvoice={() => handleCreatePdf("invoice")}
+        onPdfBlocked={onPdfBlocked}
+      />
     </main>
   );
 }

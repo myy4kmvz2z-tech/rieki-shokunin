@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   getEstimateDisplayTotals,
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
-import { hasPdfFeatures } from "../lib/plan";
-import {
-  canSharePdfFiles,
-  downloadPdfFile,
-  sharePdfFile,
-} from "../utils/pdfExport";
 import PaymentControls from "./PaymentControls";
+import PdfActionButtons from "./PdfActionButtons";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
@@ -32,18 +27,8 @@ export default function EstimateList({
   const [pdfReadyMap, setPdfReadyMap] = useState({});
   const [workingEstimateId, setWorkingEstimateId] = useState(null);
   const [pdfError, setPdfError] = useState("");
-  const [canSharePdf, setCanSharePdf] = useState(false);
 
-  useEffect(() => {
-    setCanSharePdf(canSharePdfFiles());
-  }, []);
-
-  const handleCreatePdf = async (estimate, type) => {
-    if (!hasPdfFeatures(plan)) {
-      onPdfBlocked?.();
-      return;
-    }
-
+  const createPdf = async (estimate, type) => {
     setPdfError("");
     setWorkingEstimateId(estimate.id);
 
@@ -55,30 +40,9 @@ export default function EstimateList({
       }));
     } catch (error) {
       setPdfError(error?.message || "PDFの作成に失敗しました。");
+      throw error;
     } finally {
       setWorkingEstimateId(null);
-    }
-  };
-
-  const handleShareOrDownload = async (estimateId) => {
-    const pdf = pdfReadyMap[estimateId];
-    if (!pdf) return;
-
-    setPdfError("");
-
-    try {
-      if (canSharePdf) {
-        await sharePdfFile(pdf.blob, pdf.filename);
-        return;
-      }
-      downloadPdfFile(pdf.blob, pdf.filename);
-    } catch (error) {
-      if (error?.name === "AbortError") return;
-      try {
-        downloadPdfFile(pdf.blob, pdf.filename);
-      } catch {
-        setPdfError("PDFの共有に失敗しました。");
-      }
     }
   };
 
@@ -100,7 +64,6 @@ export default function EstimateList({
           const band = getProfitRateColorBand(display.rate);
           const pdfReady = pdfReadyMap[e.id];
           const isWorking = workingEstimateId === e.id || isPdfGenerating;
-          const pdfDisabled = isWorking || !hasPdfFeatures(plan);
 
           return (
             <section key={e.id} style={s.listCard}>
@@ -130,45 +93,14 @@ export default function EstimateList({
                 onMarkPaid={() => onMarkPaid(e.id)}
               />
 
-              <div style={pdfReady ? s.pdfActionGridWithShare : s.pdfActionGrid}>
-                <button
-                  type="button"
-                  style={{
-                    ...s.pdfEstimateBtn,
-                    opacity: pdfDisabled ? 0.5 : 1,
-                  }}
-                  disabled={pdfDisabled}
-                  onClick={() => handleCreatePdf(e, "estimate")}
-                >
-                  {isWorking ? "PDF作成中…" : "見積PDF"}
-                </button>
-                <button
-                  type="button"
-                  style={{
-                    ...s.pdfInvoiceBtn,
-                    opacity: pdfDisabled ? 0.5 : 1,
-                  }}
-                  disabled={pdfDisabled}
-                  onClick={() => handleCreatePdf(e, "invoice")}
-                >
-                  {isWorking ? "PDF作成中…" : "請求PDF"}
-                </button>
-                {pdfReady && (
-                  <button
-                    type="button"
-                    style={canSharePdf ? s.pdfShareBtn : s.pdfDownloadBtn}
-                    onClick={() => handleShareOrDownload(e.id)}
-                  >
-                    {canSharePdf ? "共有" : "PDFをダウンロード"}
-                  </button>
-                )}
-              </div>
-
-              {pdfReady && (
-                <p style={s.pdfStatusText}>
-                  PDFを作成しました：{pdfReady.filename}
-                </p>
-              )}
+              <PdfActionButtons
+                plan={plan}
+                isWorking={isWorking}
+                pdfReady={pdfReady}
+                onCreateEstimate={() => createPdf(e, "estimate")}
+                onCreateInvoice={() => createPdf(e, "invoice")}
+                onPdfBlocked={onPdfBlocked}
+              />
 
               <div style={s.rowActions}>
                 <button style={s.copyBtn} onClick={() => onCopy(e.id)}>

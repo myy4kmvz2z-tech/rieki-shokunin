@@ -46,7 +46,7 @@ export default function Page() {
   const [quickEstimateTarget, setQuickEstimateTarget] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
-  const pdfExport = usePdfExport(company);
+  const pdfExport = usePdfExport();
 
   useEffect(() => {
     const clearPrint = () => {
@@ -125,8 +125,8 @@ export default function Page() {
         plan={plan}
         onBack={() => setScreen("home")}
         onSave={handleNewEstimateSave}
-        onPdf={handlePdfOutput}
-        onInvoicePdf={handleInvoicePdfOutput}
+        onGeneratePdf={pdfExport.generatePdf}
+        isPdfGenerating={pdfExport.isGenerating}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     );
@@ -148,8 +148,8 @@ export default function Page() {
           setEditingId(null);
           setScreen("list");
         }}
-        onPdf={handlePdfOutput}
-        onInvoicePdf={handleInvoicePdfOutput}
+        onGeneratePdf={pdfExport.generatePdf}
+        isPdfGenerating={pdfExport.isGenerating}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -188,8 +188,8 @@ export default function Page() {
           saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
           setCopySourceId(null);
         }}
-        onPdf={handlePdfOutput}
-        onInvoicePdf={handleInvoicePdfOutput}
+        onGeneratePdf={pdfExport.generatePdf}
+        isPdfGenerating={pdfExport.isGenerating}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -230,8 +230,8 @@ export default function Page() {
           saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
           setQuickEstimateTarget(null);
         }}
-        onPdf={handlePdfOutput}
-        onInvoicePdf={handleInvoicePdfOutput}
+        onGeneratePdf={pdfExport.generatePdf}
+        isPdfGenerating={pdfExport.isGenerating}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -374,8 +374,8 @@ export default function Page() {
       )}
       <div ref={pdfExport.hostRef}>
         <PdfExportHost
-          estimate={pdfExport.exportEstimate}
-          type={pdfExport.exportType}
+          estimate={pdfExport.renderEstimate}
+          type={pdfExport.renderType}
           company={company}
         />
       </div>
