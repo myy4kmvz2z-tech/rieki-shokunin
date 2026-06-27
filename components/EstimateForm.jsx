@@ -312,16 +312,16 @@ export default function EstimateForm({
         <hr style={s.blockDivider} />
 
         <Select
-          label="外注方式"
+          label="外注費方式"
           value={outsourcingMode}
           setValue={setOutsourcingMode}
           options={OUTSOURCING_MODES}
         />
         {outsourcingMode === "labor" ? (
           <>
-            <Input label="外注人工" value={laborCount} setValue={setLaborCount} type="number" />
+            <Input label="人工数" value={laborCount} setValue={setLaborCount} type="number" />
             <Input
-              label="人工単価 円/人工"
+              label="常用単価 円/人工"
               value={laborUnitPrice}
               setValue={setLaborUnitPrice}
               type="number"
@@ -329,7 +329,7 @@ export default function EstimateForm({
           </>
         ) : (
           <Input
-            label="外注㎡単価 円/㎡"
+            label="外注請負単価 円/㎡"
             value={outsourcingSqmUnitPrice}
             setValue={setOutsourcingSqmUnitPrice}
             type="number"

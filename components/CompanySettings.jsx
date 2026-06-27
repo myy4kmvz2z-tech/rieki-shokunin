@@ -59,15 +59,15 @@ export default function CompanySettings({ company, onBack, onSave }) {
       </section>
 
       <section style={s.listCard}>
-        <h2 style={s.sectionTitle}>人工単価</h2>
+        <h2 style={s.sectionTitle}>常用単価</h2>
         <div style={s.form}>
           <Input
-            label="標準人工単価 円/人工"
+            label="標準常用単価 円/人工"
             value={form.standardLaborUnitPrice}
             setValue={(v) => setField("standardLaborUnitPrice", v)}
             type="number"
           />
-          <p style={s.hint}>新規見積の人工単価の初期値になります</p>
+          <p style={s.hint}>新規見積の常用単価の初期値になります</p>
         </div>
         <button style={s.save} onClick={handleSave}>保存する</button>
       </section>

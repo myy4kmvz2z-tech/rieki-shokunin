@@ -88,7 +88,7 @@ export function calcOutsourcingCost({
 }
 
 export function getOutsourcingModeLabel(outsourcingMode) {
-  return outsourcingMode === "sqm" ? "㎡単価" : "人工";
+  return outsourcingMode === "sqm" ? "請負単価（㎡単価）" : "常用単価（1人工）";
 }
 
 export function normalizeEstimateOutsourcing(
@@ -141,23 +141,23 @@ export function formatOutsourcingDisplay({
     const sqm = Number(area || 0);
     const price = Number(outsourcingSqmUnitPrice || 0);
     if (price > 0 && sqm > 0) {
-      return `外注 ${sqm}㎡ × ${yen(price)}/㎡ = ${yen(amount)}`;
+      return `${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
     }
     if (amount > 0) {
       return `外注費 ${yen(amount)}`;
     }
-    return `外注 ${sqm}㎡ × ${yen(price)}/㎡ = ${yen(amount)}`;
+    return `${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
   }
 
   const count = Number(laborCount || 0);
   const unit = Number(laborUnitPrice || 0);
   if (count > 0) {
-    return `外注 ${count}人工 × ${yen(unit)} = ${yen(amount)}`;
+    return `${count}人工 × 常用単価 ${yen(unit)} = ${yen(amount)}`;
   }
   if (amount > 0) {
     return `外注費 ${yen(amount)}`;
   }
-  return `外注 ${count}人工 × ${yen(unit)} = ${yen(amount)}`;
+  return `${count}人工 × 常用単価 ${yen(unit)} = ${yen(amount)}`;
 }
 
 export function formatOutsourcingCostLine(params) {
@@ -168,14 +168,14 @@ export function formatOutsourcingCostLine(params) {
     const sqm = Number(params.area || 0);
     const price = Number(params.outsourcingSqmUnitPrice || 0);
     if (price > 0 && sqm > 0) {
-      return `+ 外注 ${sqm}㎡ × ${yen(price)}/㎡ = ${yen(amount)}`;
+      return `+ ${sqm}㎡ × 外注請負単価 ${yen(price)}/㎡ = ${yen(amount)}`;
     }
     return `+ 外注費 ${yen(amount)}`;
   }
 
   const count = Number(params.laborCount || 0);
   if (count > 0) {
-    return `+ 外注 ${count}人工 × ${yen(params.laborUnitPrice)} = ${yen(amount)}`;
+    return `+ ${count}人工 × 常用単価 ${yen(params.laborUnitPrice)} = ${yen(amount)}`;
   }
   return `+ 外注費 ${yen(amount)}`;
 }
