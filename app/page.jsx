@@ -31,7 +31,6 @@ import { findSiteMaster } from "../lib/siteMaster";
 import { prepareEstimateCopy } from "../utils/estimateCopy";
 import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
 import { usePdfExport } from "../hooks/usePdfExport";
-import PdfExportHost from "../components/PdfExportHost";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
 export default function Page() {
@@ -49,7 +48,7 @@ export default function Page() {
   const [quickEstimateTarget, setQuickEstimateTarget] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
-  const pdfExport = usePdfExport();
+  const pdfExport = usePdfExport(company);
   const { recordSend } = useSendHistory();
 
   useEffect(() => {
@@ -157,6 +156,7 @@ export default function Page() {
         onSave={handleNewEstimateSave}
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
+        onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     );
@@ -180,6 +180,7 @@ export default function Page() {
         }}
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
+        onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -220,6 +221,7 @@ export default function Page() {
         }}
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
+        onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -262,6 +264,7 @@ export default function Page() {
         }}
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
+        onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
       />
     ) : (
@@ -304,6 +307,7 @@ export default function Page() {
         }}
         onGeneratePdf={pdfExport.generatePdf}
         isPdfGenerating={pdfExport.isGenerating}
+        onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
         onPrintDocument={handlePrintDocument}
         onSendComplete={handleSendComplete}
@@ -404,13 +408,6 @@ export default function Page() {
           )}
         </div>
       )}
-      <div ref={pdfExport.hostRef}>
-        <PdfExportHost
-          estimate={pdfExport.renderEstimate}
-          type={pdfExport.renderType}
-          company={company}
-        />
-      </div>
     </>
   );
 }

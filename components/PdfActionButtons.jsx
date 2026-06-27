@@ -5,8 +5,10 @@ import { hasPdfFeatures } from "../lib/plan";
 import {
   canSharePdfFiles,
   downloadPdfFile,
+  getAvailableSendMethods,
   sharePdfFile,
 } from "../utils/pdfExport";
+import { executeSendMethod } from "../utils/sendCenter";
 import { s } from "../lib/styles";
 
 export default function PdfActionButtons({
@@ -16,15 +18,26 @@ export default function PdfActionButtons({
   pdfReady,
   onCreateEstimate,
   onCreateInvoice,
+  onPrintDocument,
   onPdfBlocked,
 }) {
   const [canSharePdf, setCanSharePdf] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [showSendPanel, setShowSendPanel] = useState(false);
+  const [sendMethod, setSendMethod] = useState("line");
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     setCanSharePdf(canSharePdfFiles());
   }, []);
 
+  useEffect(() => {
+    if (!pdfReady) {
+      setShowSendPanel(false);
+    }
+  }, [pdfReady]);
+
+  const sendMethods = getAvailableSendMethods(canSharePdf);
   const pdfDisabled = disabled || isWorking || !hasPdfFeatures(plan);
 
   const handleCreate = async (type) => {
@@ -34,6 +47,7 @@ export default function PdfActionButtons({
     }
 
     setActionError("");
+    setShowSendPanel(false);
     try {
       if (type === "invoice") {
         await onCreateInvoice();
@@ -45,26 +59,35 @@ export default function PdfActionButtons({
     }
   };
 
-  const handleShare = async () => {
+  const handleSend = async () => {
     if (!pdfReady) return;
 
     setActionError("");
+    setIsSending(true);
+
     try {
-      await sharePdfFile(pdfReady.file ?? pdfReady.blob, pdfReady.filename);
+      if (sendMethod === "print") {
+        onPrintDocument?.(pdfReady.type === "invoice" ? "invoice" : "estimate");
+        setShowSendPanel(false);
+        return;
+      }
+
+      await executeSendMethod(sendMethod, pdfReady);
+      setShowSendPanel(false);
     } catch (error) {
       if (error?.name === "AbortError") return;
-      setActionError("共有できませんでした。ダウンロードをお試しください。");
-    }
-  };
-
-  const handleDownload = () => {
-    if (!pdfReady) return;
-
-    setActionError("");
-    try {
-      downloadPdfFile(pdfReady.file ?? pdfReady.blob, pdfReady.filename);
-    } catch {
-      setActionError("PDFのダウンロードに失敗しました。");
+      if (sendMethod !== "pdf-save") {
+        try {
+          downloadPdfFile(pdfReady.file ?? pdfReady.blob, pdfReady.filename);
+          setShowSendPanel(false);
+          return;
+        } catch {
+          // fall through
+        }
+      }
+      setActionError(error?.message || "送信に失敗しました。");
+    } finally {
+      setIsSending(false);
     }
   };
 
@@ -91,24 +114,52 @@ export default function PdfActionButtons({
 
       {pdfReady && (
         <>
-          <div style={s.pdfActionGrid}>
-            {canSharePdf && (
-              <button type="button" style={s.pdfShareBtn} onClick={handleShare}>
-                共有
-              </button>
-            )}
-            <button
-              type="button"
-              style={{
-                ...s.pdfDownloadBtn,
-                gridColumn: canSharePdf ? undefined : "1 / -1",
-              }}
-              onClick={handleDownload}
-            >
-              ダウンロード
-            </button>
-          </div>
           <p style={s.pdfStatusText}>PDFを作成しました：{pdfReady.filename}</p>
+          {!showSendPanel ? (
+            <button type="button" style={s.sendBtnWide} onClick={() => setShowSendPanel(true)}>
+              📤 送る
+            </button>
+          ) : (
+            <div style={s.sendSheetInline}>
+              <div style={s.sendSheetDivider} />
+              <p style={s.sendSheetTitle}>
+                {pdfReady.type === "invoice" ? "請求書を送る" : "見積書を送る"}
+              </p>
+              <div style={s.sendMethodList}>
+                {sendMethods.map((item) => (
+                  <label key={item.id} style={s.sendMethodOption}>
+                    <input
+                      type="radio"
+                      name="pdf-send-method"
+                      value={item.id}
+                      checked={sendMethod === item.id}
+                      onChange={() => setSendMethod(item.id)}
+                    />
+                    <span>{item.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div style={s.sendSheetActions}>
+                <button
+                  type="button"
+                  style={s.secondary}
+                  onClick={() => setShowSendPanel(false)}
+                  disabled={isSending}
+                >
+                  閉じる
+                </button>
+                <button
+                  type="button"
+                  style={s.sendSheetSubmit}
+                  onClick={handleSend}
+                  disabled={isSending}
+                >
+                  {isSending ? "送信中…" : "送る"}
+                </button>
+              </div>
+              <div style={s.sendSheetDivider} />
+            </div>
+          )}
         </>
       )}
 

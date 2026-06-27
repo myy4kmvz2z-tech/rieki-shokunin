@@ -1,7 +1,7 @@
 import {
   downloadPdfFile,
   sharePdfFile,
-} from "./pdfExport";
+} from "./pdfExportCore";
 
 export const SEND_METHODS = [
   { id: "line", label: "LINE" },

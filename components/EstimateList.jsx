@@ -126,6 +126,7 @@ export default function EstimateList({
                 pdfReady={pdfReady}
                 onCreateEstimate={() => createPdf(e, "estimate")}
                 onCreateInvoice={() => createPdf(e, "invoice")}
+                onPrintDocument={(_, docType) => onPrintDocument(e, docType)}
                 onPdfBlocked={onPdfBlocked}
               />
 

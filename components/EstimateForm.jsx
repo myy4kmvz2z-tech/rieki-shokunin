@@ -212,6 +212,7 @@ export default function EstimateForm({
   onSave,
   onGeneratePdf,
   isPdfGenerating = false,
+  onPrintDocument,
   onPdfBlocked,
   initialEstimate,
   isCopy = false,
@@ -735,6 +736,7 @@ export default function EstimateForm({
         pdfReady={pdfReady}
         onCreateEstimate={() => handleCreatePdf("estimate")}
         onCreateInvoice={() => handleCreatePdf("invoice")}
+        onPrintDocument={(docType) => onPrintDocument?.(buildEstimate(), docType)}
         onPdfBlocked={onPdfBlocked}
       />
     </main>
