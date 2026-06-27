@@ -3,14 +3,25 @@ import {
   getProfitRateColorBand,
   yen,
 } from "../utils/calcProfit";
+import PaymentControls from "./PaymentControls";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
-export default function EstimateList({ estimates, plan, clientCount, onBack, onEdit, onPdf }) {
+export default function EstimateList({
+  estimates,
+  plan,
+  clientCount,
+  onBack,
+  onEdit,
+  onPdf,
+  onAdvancePayment,
+  onMarkPaid,
+}) {
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
-      <h1 style={s.title}>見積一覧</h1>
+      <h1 style={s.title}>保存済み見積</h1>
+      <p style={s.sub}>見積 → 受注 → 請求 → 入金待ち → 入金済</p>
 
       <UsageCard plan={plan} clientCount={clientCount} estimateCount={estimates.length} compact />
 
@@ -42,6 +53,12 @@ export default function EstimateList({ estimates, plan, clientCount, onBack, onE
                   </p>
                 </div>
               </div>
+
+              <PaymentControls
+                paymentStatus={e.paymentStatus}
+                onAdvance={() => onAdvancePayment(e.id)}
+                onMarkPaid={() => onMarkPaid(e.id)}
+              />
 
               <div style={s.rowActions}>
                 <button style={s.editBtn} onClick={() => onEdit(e.id)}>

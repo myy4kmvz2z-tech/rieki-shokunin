@@ -1,4 +1,5 @@
 import { resolveEstimateFinancials } from "./calcProfit";
+import { calcPaymentAmounts } from "../lib/payment";
 
 const DEFAULT_MONTHLY_TARGET = 500000;
 
@@ -14,18 +15,7 @@ function isSameMonth(a, b) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
 }
 
-function getPaymentStatus(estimate) {
-  const status = estimate?.paymentStatus;
-  if (status === "pending" || status === "paid" || status === "unbilled") {
-    return status;
-  }
-  return "unbilled";
-}
-
-function accumulateEstimate(
-  estimate,
-  { clientRates, unbilledAmount, pendingPaymentAmount, includeBilling, includeRates }
-) {
+function accumulateEstimate(estimate, { clientRates, includeRates }) {
   const { profit, sales, rate } = resolveEstimateFinancials(estimate);
 
   if (includeRates && estimate.client) {
@@ -34,15 +24,6 @@ function accumulateEstimate(
     }
     clientRates[estimate.client].sum += rate;
     clientRates[estimate.client].count += 1;
-  }
-
-  if (includeBilling) {
-    const status = getPaymentStatus(estimate);
-    if (status === "pending") {
-      pendingPaymentAmount.value += sales;
-    } else if (status !== "paid") {
-      unbilledAmount.value += sales;
-    }
   }
 
   return { profit, sales, rate };
@@ -86,8 +67,6 @@ export function buildCeoDashboard(estimates, targets = {}) {
   let monthSales = 0;
   const monthClientRates = {};
   const allClientRates = {};
-  const unbilledAmount = { value: 0 };
-  const pendingPaymentAmount = { value: 0 };
 
   estimates.forEach((estimate) => {
     const date = parseEstimateDate(estimate.createdAt);
@@ -96,9 +75,6 @@ export function buildCeoDashboard(estimates, targets = {}) {
     if (isThisMonth) {
       const result = accumulateEstimate(estimate, {
         clientRates: monthClientRates,
-        unbilledAmount,
-        pendingPaymentAmount,
-        includeBilling: true,
         includeRates: true,
       });
       monthProfit += result.profit;
@@ -107,11 +83,12 @@ export function buildCeoDashboard(estimates, targets = {}) {
 
     accumulateEstimate(estimate, {
       clientRates: allClientRates,
-      unbilledAmount: { value: 0 },
-      pendingPaymentAmount: { value: 0 },
-      includeBilling: false,
       includeRates: true,
     });
+  });
+
+  const { unbilledAmount, pendingPaymentAmount } = calcPaymentAmounts(estimates, {
+    thisMonthOnly: true,
   });
 
   const profitRate = monthSales > 0 ? (monthProfit / monthSales) * 100 : 0;
@@ -127,8 +104,8 @@ export function buildCeoDashboard(estimates, targets = {}) {
     monthlyTargetProfit,
     monthlyRemaining,
     monthlyRemainingLabel: formatCompactYen(monthlyRemaining),
-    unbilledAmount: unbilledAmount.value,
-    pendingPaymentAmount: pendingPaymentAmount.value,
+    unbilledAmount,
+    pendingPaymentAmount,
     clientRanking: buildClientRanking(rankingSource),
   };
 }

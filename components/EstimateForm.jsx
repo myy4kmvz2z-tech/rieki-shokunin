@@ -280,6 +280,7 @@ export default function EstimateForm({
     cost: totals.cost,
     profit: totals.profit,
     rate: totals.rate,
+    paymentStatus: initialEstimate?.paymentStatus,
     createdAt: initialEstimate?.createdAt ?? new Date().toLocaleString("ja-JP"),
   });
 

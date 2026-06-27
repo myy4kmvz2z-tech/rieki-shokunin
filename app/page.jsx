@@ -15,6 +15,11 @@ import { useCompany } from "../hooks/useCompany";
 import { useEstimates } from "../hooks/useEstimates";
 import { usePlan } from "../hooks/usePlan";
 import { canSaveEstimate, getEstimateLimitMessage, getPdfUpgradeMessage, hasPdfFeatures } from "../lib/plan";
+import {
+  getNextPaymentStatus,
+  PAYMENT_PAID,
+  withPaymentStatus,
+} from "../lib/payment";
 import { s } from "../lib/styles";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
@@ -72,7 +77,22 @@ export default function Page() {
       setShowEstimateLimitModal(true);
       return;
     }
-    saveNewEstimate(estimate);
+    saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
+  };
+
+  const updateEstimate = (id, patch) => {
+    saveAll(estimates.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
+
+  const handleAdvancePayment = (id) => {
+    const estimate = estimates.find((item) => item.id === id);
+    if (!estimate) return;
+    const next = getNextPaymentStatus(estimate.paymentStatus);
+    if (next) updateEstimate(id, { paymentStatus: next });
+  };
+
+  const handleMarkPaid = (id) => {
+    updateEstimate(id, { paymentStatus: PAYMENT_PAID });
   };
 
   let content;
@@ -135,6 +155,8 @@ export default function Page() {
           setScreen("edit");
         }}
         onPdf={handlePdfOutput}
+        onAdvancePayment={handleAdvancePayment}
+        onMarkPaid={handleMarkPaid}
       />
     );
   } else if (screen === "pdf") {
