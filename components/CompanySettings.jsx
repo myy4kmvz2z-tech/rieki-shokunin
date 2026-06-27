@@ -13,7 +13,6 @@ export default function CompanySettings({ company, onBack, onSave }) {
     standardLaborUnitPrice: company.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE,
     monthlyTargetProfit: company.monthlyTargetProfit ?? DEFAULT_COMPANY.monthlyTargetProfit,
     dailyTargetProfit: company.dailyTargetProfit ?? DEFAULT_COMPANY.dailyTargetProfit,
-    vehicleName: company.vehicleName ?? DEFAULT_COMPANY.vehicleName,
     fuelEfficiencyKmPerL:
       company.fuelEfficiencyKmPerL ?? DEFAULT_COMPANY.fuelEfficiencyKmPerL,
     gasolinePricePerL: company.gasolinePricePerL ?? DEFAULT_COMPANY.gasolinePricePerL,
@@ -40,7 +39,6 @@ export default function CompanySettings({ company, onBack, onSave }) {
       standardLaborUnitPrice: Number(form.standardLaborUnitPrice || DEFAULT_LABOR_UNIT_PRICE),
       monthlyTargetProfit: Number(form.monthlyTargetProfit || 0),
       dailyTargetProfit: Number(form.dailyTargetProfit || 0),
-      vehicleName: form.vehicleName.trim() || DEFAULT_COMPANY.vehicleName,
       fuelEfficiencyKmPerL: Number(
         form.fuelEfficiencyKmPerL || DEFAULT_COMPANY.fuelEfficiencyKmPerL
       ),
@@ -95,13 +93,8 @@ export default function CompanySettings({ company, onBack, onSave }) {
       </section>
 
       <section style={s.listCard}>
-        <h2 style={s.sectionTitle}>車両・交通費設定</h2>
+        <h2 style={s.sectionTitle}>交通費設定</h2>
         <div style={s.form}>
-          <Input
-            label="車両名"
-            value={form.vehicleName}
-            setValue={(v) => setField("vehicleName", v)}
-          />
           <Input
             label="燃費 km/L"
             value={form.fuelEfficiencyKmPerL}

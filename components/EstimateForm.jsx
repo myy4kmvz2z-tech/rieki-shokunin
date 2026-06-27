@@ -16,11 +16,9 @@ import {
 } from "../utils/calcProfit";
 import { hasPdfFeatures } from "../lib/plan";
 import {
-  formatTransportFuelSummary,
   getDefaultFuelEfficiency,
   getDefaultGasolinePrice,
   getDefaultTripType,
-  getDefaultVehicleName,
   getInitialTransportState,
   TRANSPORT_MODE_FIXED,
   TRANSPORT_MODE_GPS,
@@ -39,32 +37,6 @@ const TRANSPORT_METHOD_OPTIONS = [
   { value: "gps", label: "GPS自動", icon: "🚗" },
   { value: "manual", label: "手入力", icon: "⌨️" },
 ];
-
-const TRIP_TYPE_OPTIONS = [
-  { value: "oneWay", label: "片道" },
-  { value: "roundTrip", label: "往復" },
-];
-
-function TransportFuelSummary({ company, distanceKm, tripType, fuelEfficiencyKmPerL, gasolinePricePerL, transportCost }) {
-  const summary = formatTransportFuelSummary({
-    vehicleName: getDefaultVehicleName(company),
-    fuelEfficiencyKmPerL,
-    gasolinePricePerL,
-    distanceKm,
-    tripType,
-    transportCost,
-  });
-
-  return (
-    <div style={s.transportCalcBox}>
-      <p style={s.transportSummaryLine}>{summary.vehicleLine}</p>
-      <p style={s.transportSummaryLine}>{summary.fuelLine}</p>
-      <p style={s.transportSummaryLine}>{summary.gasLine}</p>
-      <p style={s.transportSummaryLine}>{summary.distanceLine}</p>
-      <p style={{ ...s.transportSummaryLine, ...s.transportSummaryCost }}>{summary.costLine}</p>
-    </div>
-  );
-}
 
 function Section({ title, children }) {
   return (
@@ -416,7 +388,6 @@ export default function EstimateForm({
     kmRate,
     fuelEfficiencyKmPerL,
     gasolinePricePerL,
-    vehicleName: getDefaultVehicleName(company),
     fixedTransport,
     highwayToll,
     parkingFee,
@@ -557,19 +528,6 @@ export default function EstimateForm({
             />
             <Input
               large
-              label="距離 km"
-              value={distanceKm}
-              setValue={setDistanceKm}
-              type="number"
-            />
-            <CardButtonGroup
-              label="片道 / 往復"
-              value={tripType}
-              setValue={setTripType}
-              options={TRIP_TYPE_OPTIONS}
-            />
-            <Input
-              large
               label="燃費 km/L"
               value={fuelEfficiencyKmPerL}
               setValue={setFuelEfficiencyKmPerL}
@@ -582,14 +540,17 @@ export default function EstimateForm({
               setValue={setGasolinePricePerL}
               type="number"
             />
-            <TransportFuelSummary
-              company={company}
-              distanceKm={distanceKm}
-              tripType={tripType}
-              fuelEfficiencyKmPerL={fuelEfficiencyKmPerL}
-              gasolinePricePerL={gasolinePricePerL}
-              transportCost={totals.transportCost}
+            <Input
+              large
+              label="距離 km"
+              value={distanceKm}
+              setValue={setDistanceKm}
+              type="number"
             />
+            <div style={s.estimateReadonlyLarge}>
+              <p style={s.estimateReadonlyLabel}>交通費 円</p>
+              <p style={s.estimateReadonlyValueLarge}>{yen(totals.transportCost)}</p>
+            </div>
           </>
         )}
         {transportFeeMethod === "manual" && (

@@ -1,7 +1,6 @@
 export const DEFAULT_TRANSPORT_KM_RATE = 40;
 export const DEFAULT_FUEL_EFFICIENCY_KM_PER_L = 9;
 export const DEFAULT_GASOLINE_PRICE_PER_L = 200;
-export const DEFAULT_VEHICLE_NAME = "ハイエース";
 
 export const TRANSPORT_FEE_METHODS = [
   { value: "gps", label: "GPS自動" },
@@ -23,10 +22,6 @@ export function getDefaultTripType(company) {
 
 export function getDefaultKmRate(company) {
   return Number(company?.transportKmRate ?? DEFAULT_TRANSPORT_KM_RATE);
-}
-
-export function getDefaultVehicleName(company = {}) {
-  return String(company?.vehicleName ?? DEFAULT_VEHICLE_NAME);
 }
 
 export function getDefaultFuelEfficiency(company = {}) {
@@ -94,7 +89,6 @@ export function calcTransportTotal({
 }
 
 export function formatTransportFuelSummary({
-  vehicleName,
   fuelEfficiencyKmPerL,
   gasolinePricePerL,
   distanceKm,
@@ -108,7 +102,6 @@ export function formatTransportFuelSummary({
   const cost = Number(transportCost || 0);
 
   return {
-    vehicleLine: String(vehicleName || DEFAULT_VEHICLE_NAME),
     fuelLine: `${fuel}km/L`,
     gasLine: `ガソリン ${gasPrice.toLocaleString()}円/L`,
     distanceLine: `距離 ${distance.toLocaleString()}km ${trip}`,
@@ -177,7 +170,6 @@ export function normalizeEstimateTransport(estimate, company = {}) {
       kmRate: getDefaultKmRate(company),
       fuelEfficiencyKmPerL: getDefaultFuelEfficiency(company),
       gasolinePricePerL: getDefaultGasolinePrice(company),
-      vehicleName: getDefaultVehicleName(company),
       fixedTransport: 0,
       highwayToll: 0,
       parkingFee: 0,
@@ -210,7 +202,6 @@ export function normalizeEstimateTransport(estimate, company = {}) {
   const gasolinePricePerL = Number(
     estimate.gasolinePricePerL ?? getDefaultGasolinePrice(company)
   );
-  const vehicleName = String(estimate.vehicleName ?? getDefaultVehicleName(company));
   const fixedTransport = Number(
     estimate.fixedTransport ??
       estimate.transport ??
@@ -243,7 +234,6 @@ export function normalizeEstimateTransport(estimate, company = {}) {
     kmRate,
     fuelEfficiencyKmPerL,
     gasolinePricePerL,
-    vehicleName,
     fixedTransport,
     highwayToll,
     parkingFee,
@@ -268,14 +258,13 @@ export function getTransportDetailLabel(estimate, company = {}) {
   const t = normalizeEstimateTransport(estimate, company);
   if (t.transportFeeMethod === "gps") {
     const summary = formatTransportFuelSummary({
-      vehicleName: t.vehicleName,
       fuelEfficiencyKmPerL: t.fuelEfficiencyKmPerL,
       gasolinePricePerL: t.gasolinePricePerL,
       distanceKm: t.distanceKm,
       tripType: t.tripType,
       transportCost: t.transportCost,
     });
-    return `${summary.vehicleLine} / ${summary.fuelLine} / ${summary.gasLine} / ${summary.distanceLine} / ${summary.costLine}`;
+    return `${summary.fuelLine} / ${summary.gasLine} / ${summary.distanceLine} / ${summary.costLine}`;
   }
   return `交通費 ${Number(t.fixedTransport).toLocaleString()}円`;
 }
@@ -289,7 +278,6 @@ export function getInitialTransportState(
   const defaultTripType = getDefaultTripType(company);
   const defaultFuelEfficiency = getDefaultFuelEfficiency(company);
   const defaultGasolinePrice = getDefaultGasolinePrice(company);
-  const defaultVehicleName = getDefaultVehicleName(company);
 
   if (!initialEstimate) {
     return {
@@ -300,7 +288,6 @@ export function getInitialTransportState(
       kmRate: defaultKmRate,
       fuelEfficiencyKmPerL: defaultFuelEfficiency,
       gasolinePricePerL: defaultGasolinePrice,
-      vehicleName: defaultVehicleName,
       fixedTransport: clientDefaultTransport,
       highwayToll: 0,
       parkingFee: 0,
