@@ -20,6 +20,7 @@ import {
   TRANSPORT_MODE_FIXED,
   TRANSPORT_MODE_GPS,
 } from "../utils/calcTransport";
+import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import SiteTransportSection from "./SiteTransportSection";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, Select } from "./FormFields";
@@ -128,35 +129,49 @@ function getInitialOutsourcingState(initialEstimate, fromClient, company) {
 
 function getInitialCostState(
   clients,
+  siteMasters,
   initialEstimate,
   defaultClient,
   defaultWorkType,
   company
 ) {
+  const synced = getEstimateSyncFromSiteMaster(clients, siteMasters, defaultClient, defaultWorkType);
   const fromClient = getCostStructureForClient(clients, defaultClient, defaultWorkType);
 
   if (!initialEstimate) {
     return {
-      material: fromClient.material,
-      pasteLabor: fromClient.pasteLabor,
-      substrate: fromClient.substrate,
-      auxiliary: fromClient.auxiliary,
-      waste: fromClient.waste,
+      material: synced.material,
+      pasteLabor: synced.pasteLabor,
+      substrate: synced.substrate,
+      auxiliary: synced.auxiliary,
+      waste: synced.waste,
       sellingUnitPrice: 0,
       discount: 0,
-      targetProfitRate: fromClient.standardTargetProfitRate,
+      targetProfitRate: synced.targetProfitRate,
       desiredProfitAmount: 0,
-      ...getInitialOutsourcingState(null, fromClient, company),
+      outsourcingMode: synced.outsourcingMode,
+      laborCount: 0,
+      laborUnitPrice: synced.laborUnitPrice,
+      outsourcingSqmUnitPrice: synced.outsourcingSqmUnitPrice,
+      directLabor: 0,
     };
   }
 
   const material =
     initialEstimate.material ??
-    getCostStructureForClient(
+    getEstimateSyncFromSiteMaster(
       clients,
+      siteMasters,
       initialEstimate.client ?? defaultClient,
       initialEstimate.workType ?? defaultWorkType
     ).material;
+
+  const editSynced = getEstimateSyncFromSiteMaster(
+    clients,
+    siteMasters,
+    initialEstimate.client ?? defaultClient,
+    initialEstimate.workType ?? defaultWorkType
+  );
 
   const editClient = getCostStructureForClient(
     clients,
@@ -172,30 +187,15 @@ function getInitialCostState(
     waste: initialEstimate.waste ?? 0,
     sellingUnitPrice: initialEstimate.unitPrice ?? 0,
     discount: initialEstimate.discount ?? 0,
-    targetProfitRate:
-      initialEstimate.targetProfitRate ?? editClient.standardTargetProfitRate,
+    targetProfitRate: initialEstimate.targetProfitRate ?? editSynced.targetProfitRate,
     desiredProfitAmount: initialEstimate.desiredProfitAmount ?? 0,
     ...getInitialOutsourcingState(initialEstimate, editClient, company),
   };
 }
 
-function syncFromClient(fromClient) {
-  return {
-    material: fromClient.material,
-    pasteLabor: fromClient.pasteLabor,
-    substrate: fromClient.substrate,
-    auxiliary: fromClient.auxiliary,
-    waste: fromClient.waste,
-    outsourcingMode: fromClient.standardOutsourcingMode === "sqm" ? "sqm" : "labor",
-    laborUnitPrice: fromClient.standardLaborUnitPrice,
-    outsourcingSqmUnitPrice: fromClient.standardOutsourcingSqmUnitPrice,
-    targetProfitRate: fromClient.standardTargetProfitRate,
-    fixedTransport: fromClient.transport,
-  };
-}
-
 export default function EstimateForm({
   clients,
+  siteMasters = [],
   company,
   plan,
   onBack,
@@ -205,15 +205,15 @@ export default function EstimateForm({
   onPdfBlocked,
   initialEstimate,
   isCopy = false,
-  isFromTemplate = false,
 }) {
-  const editing = !!initialEstimate && !isCopy && !isFromTemplate;
+  const editing = !!initialEstimate && !isCopy;
   const defaultClient = clients[0]?.name || "";
   const defaultWorkType = initialEstimate?.workType ?? "クロス SP";
-  const skipClientSync = useRef(editing || isCopy || isFromTemplate);
+  const skipClientSync = useRef(editing || isCopy);
 
   const initialCost = getInitialCostState(
     clients,
+    siteMasters,
     initialEstimate,
     initialEstimate?.client ?? defaultClient,
     defaultWorkType,
@@ -294,8 +294,7 @@ export default function EstimateForm({
       return;
     }
 
-    const fromClient = getCostStructureForClient(clients, client, workType);
-    const synced = syncFromClient(fromClient);
+    const synced = getEstimateSyncFromSiteMaster(clients, siteMasters, client, workType);
     setMaterial(synced.material);
     setPasteLabor(synced.pasteLabor);
     setSubstrate(synced.substrate);
@@ -308,7 +307,7 @@ export default function EstimateForm({
     if (transportFeeMethod === "manual") {
       setFixedTransport(synced.fixedTransport);
     }
-  }, [clients, client, workType, transportFeeMethod]);
+  }, [clients, siteMasters, client, workType, transportFeeMethod]);
 
   const clientOptions = clients.map((c) => c.name);
   const totals = calcEstimateTotals({
@@ -434,7 +433,7 @@ export default function EstimateForm({
     <main style={s.estimatePage}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.estimatePageTitle}>
-        {isCopy ? "見積コピー" : isFromTemplate ? "テンプレートから見積" : editing ? "見積編集" : "見積作成"}
+        {isCopy ? "見積コピー" : editing ? "見積編集" : "見積作成"}
       </h1>
 
       <Section title="① 現場情報">

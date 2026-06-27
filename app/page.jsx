@@ -21,10 +21,9 @@ import {
   withPaymentStatus,
 } from "../lib/payment";
 import { s } from "../lib/styles";
-import TemplateManager from "../components/TemplateManager";
-import { useTemplates } from "../hooks/useTemplates";
+import SiteMasterManager from "../components/SiteMasterManager";
+import { useSiteMasters } from "../hooks/useSiteMasters";
 import { prepareEstimateCopy } from "../utils/estimateCopy";
-import { templateToEstimateInitial } from "../utils/estimateTemplate";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
 export default function Page() {
@@ -33,12 +32,11 @@ export default function Page() {
   const { clients, saveClients } = useClients();
   const { company, saveCompany } = useCompany();
   const { plan, setPlan } = usePlan();
-  const { templates, saveAll: saveTemplates } = useTemplates();
+  const { siteMasters, saveAll: saveSiteMasters } = useSiteMasters();
   const [printDoc, setPrintDoc] = useState(null);
   const [shouldPrint, setShouldPrint] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [copySourceId, setCopySourceId] = useState(null);
-  const [templateSourceId, setTemplateSourceId] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
 
@@ -108,6 +106,7 @@ export default function Page() {
     content = (
       <EstimateForm
         clients={clients}
+        siteMasters={siteMasters}
         company={company}
         plan={plan}
         onBack={() => setScreen("home")}
@@ -122,6 +121,7 @@ export default function Page() {
     content = editingEstimate ? (
       <EstimateForm
         clients={clients}
+        siteMasters={siteMasters}
         company={company}
         plan={plan}
         initialEstimate={editingEstimate}
@@ -157,6 +157,7 @@ export default function Page() {
     content = copySource ? (
       <EstimateForm
         clients={clients}
+        siteMasters={siteMasters}
         company={company}
         plan={plan}
         isCopy
@@ -191,57 +192,14 @@ export default function Page() {
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
-  } else if (screen === "templates") {
+  } else if (screen === "siteMasters") {
     content = (
-      <TemplateManager
-        templates={templates}
+      <SiteMasterManager
+        siteMasters={siteMasters}
         clients={clients}
         onBack={() => setScreen("home")}
-        onSave={saveTemplates}
-        onUseTemplate={(id) => {
-          setTemplateSourceId(id);
-          setScreen("fromTemplate");
-        }}
+        onSave={saveSiteMasters}
       />
-    );
-  } else if (screen === "fromTemplate") {
-    const templateSource = templates.find((item) => item.id === templateSourceId);
-    content = templateSource ? (
-      <EstimateForm
-        clients={clients}
-        company={company}
-        plan={plan}
-        isFromTemplate
-        initialEstimate={templateToEstimateInitial(templateSource)}
-        onBack={() => {
-          setTemplateSourceId(null);
-          setScreen("templates");
-        }}
-        onSave={(estimate) => {
-          if (!canSaveEstimate(plan, estimates.length)) {
-            setShowEstimateLimitModal(true);
-            return;
-          }
-          saveNewEstimate(withPaymentStatus(estimate, estimate.paymentStatus));
-          setTemplateSourceId(null);
-        }}
-        onPdf={handlePdfOutput}
-        onInvoicePdf={handleInvoicePdfOutput}
-        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
-      />
-    ) : (
-      <main style={s.page}>
-        <button
-          style={s.back}
-          onClick={() => {
-            setTemplateSourceId(null);
-            setScreen("templates");
-          }}
-        >
-          ← 戻る
-        </button>
-        <p style={s.muted}>テンプレートが見つかりませんでした。</p>
-      </main>
     );
   } else if (screen === "list") {
     content = (
@@ -315,7 +273,7 @@ export default function Page() {
           plan={plan}
           company={company}
           onNewEstimate={() => setScreen("new")}
-          onTemplates={() => setScreen("templates")}
+          onSiteMasters={() => setScreen("siteMasters")}
           onList={() => setScreen("list")}
           onClients={() => setScreen("clients")}
           onSettings={() => setScreen("settings")}
