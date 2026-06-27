@@ -27,6 +27,8 @@ import { useQuickEstimateUsage } from "../hooks/useQuickEstimateUsage";
 import { findSiteMaster } from "../lib/siteMaster";
 import { prepareEstimateCopy } from "../utils/estimateCopy";
 import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
+import { usePdfExport } from "../hooks/usePdfExport";
+import PdfExportHost from "../components/PdfExportHost";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
 export default function Page() {
@@ -44,6 +46,7 @@ export default function Page() {
   const [quickEstimateTarget, setQuickEstimateTarget] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
+  const pdfExport = usePdfExport(company);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -269,7 +272,9 @@ export default function Page() {
           setCopySourceId(id);
           setScreen("copy");
         }}
-        onPdf={handlePdfOutput}
+        onGeneratePdf={pdfExport.generatePdf}
+        isPdfGenerating={pdfExport.isGenerating}
+        onPdfBlocked={() => setShowPdfUpgradeModal(true)}
         onAdvancePayment={handleAdvancePayment}
         onMarkPaid={handleMarkPaid}
       />
@@ -367,6 +372,13 @@ export default function Page() {
           )}
         </div>
       )}
+      <div ref={pdfExport.hostRef}>
+        <PdfExportHost
+          estimate={pdfExport.exportEstimate}
+          type={pdfExport.exportType}
+          company={company}
+        />
+      </div>
     </>
   );
 }
