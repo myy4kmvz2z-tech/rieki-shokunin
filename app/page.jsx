@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import ClientManager from "../components/ClientManager";
+import PartnerManager from "../components/PartnerManager";
 import CompanySettings from "../components/CompanySettings";
 import ConfirmModal from "../components/ConfirmModal";
 import Dashboard from "../components/Dashboard";
@@ -10,19 +10,16 @@ import EstimateList from "../components/EstimateList";
 import PricingPlan from "../components/PricingPlan";
 import PdfEstimate from "../components/PdfEstimate";
 import PdfInvoice from "../components/PdfInvoice";
-import { useClients } from "../hooks/useClients";
+import { usePartners } from "../hooks/usePartners";
 import { useCompany } from "../hooks/useCompany";
 import { useEstimates } from "../hooks/useEstimates";
 import { usePlan } from "../hooks/usePlan";
 import { canSaveEstimate, getEstimateLimitMessage, getPdfUpgradeMessage, hasPdfFeatures } from "../lib/plan";
 import {
   getNextPaymentStatus,
-  getStatusAfterSend,
   PAYMENT_PAID,
   withPaymentStatus,
 } from "../lib/payment";
-import { useSendHistory } from "../hooks/useSendHistory";
-import { buildSendHistoryEntry } from "../utils/sendCenter";
 import { s } from "../lib/styles";
 import SiteMasterManager from "../components/SiteMasterManager";
 import { useSiteMasters } from "../hooks/useSiteMasters";
@@ -36,7 +33,7 @@ import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 export default function Page() {
   const [screen, setScreen] = useState("home");
   const { estimates, saveAll } = useEstimates();
-  const { clients, saveClients } = useClients();
+  const { partners, savePartners } = usePartners();
   const { company, saveCompany } = useCompany();
   const { plan, setPlan } = usePlan();
   const { siteMasters, saveAll: saveSiteMasters } = useSiteMasters();
@@ -49,7 +46,6 @@ export default function Page() {
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
   const pdfExport = usePdfExport(company);
-  const { recordSend } = useSendHistory();
 
   useEffect(() => {
     const clearPrint = () => {
@@ -123,20 +119,6 @@ export default function Page() {
     handlePdfOutput(estimate);
   };
 
-  const handleSendComplete = ({ estimate, docType, method, filename }) => {
-    recordSend(
-      buildSendHistoryEntry({
-        estimate,
-        docType,
-        method,
-        filename: filename ?? (method === "print" ? "印刷" : ""),
-      })
-    );
-    updateEstimate(estimate.id, {
-      paymentStatus: getStatusAfterSend(estimate.paymentStatus, docType),
-    });
-  };
-
   const handleQuickEstimate = (client, workType) => {
     recordUsage(client, workType);
     setQuickEstimateTarget({ client, workType });
@@ -148,7 +130,7 @@ export default function Page() {
   if (screen === "new") {
     content = (
       <EstimateForm
-        clients={clients}
+        partners={partners}
         siteMasters={siteMasters}
         company={company}
         plan={plan}
@@ -164,7 +146,7 @@ export default function Page() {
     const editingEstimate = estimates.find((e) => e.id === editingId);
     content = editingEstimate ? (
       <EstimateForm
-        clients={clients}
+        partners={partners}
         siteMasters={siteMasters}
         company={company}
         plan={plan}
@@ -201,7 +183,7 @@ export default function Page() {
     const copySource = estimates.find((e) => e.id === copySourceId);
     content = copySource ? (
       <EstimateForm
-        clients={clients}
+        partners={partners}
         siteMasters={siteMasters}
         company={company}
         plan={plan}
@@ -244,7 +226,7 @@ export default function Page() {
       : null;
     content = master ? (
       <EstimateForm
-        clients={clients}
+        partners={partners}
         siteMasters={siteMasters}
         company={company}
         plan={plan}
@@ -285,7 +267,7 @@ export default function Page() {
     content = (
       <SiteMasterManager
         siteMasters={siteMasters}
-        clients={clients}
+        partners={partners}
         onBack={() => setScreen("home")}
         onSave={saveSiteMasters}
       />
@@ -295,7 +277,7 @@ export default function Page() {
       <EstimateList
         estimates={estimates}
         plan={plan}
-        clientCount={clients.length}
+        clientCount={partners.length}
         onBack={() => setScreen("home")}
         onEdit={(id) => {
           setEditingId(id);
@@ -309,8 +291,6 @@ export default function Page() {
         isPdfGenerating={pdfExport.isGenerating}
         onPrintDocument={handlePrintDocument}
         onPdfBlocked={() => setShowPdfUpgradeModal(true)}
-        onPrintDocument={handlePrintDocument}
-        onSendComplete={handleSendComplete}
         onAdvancePayment={handleAdvancePayment}
         onMarkPaid={handleMarkPaid}
       />
@@ -331,14 +311,14 @@ export default function Page() {
         onPdf={handleInvoicePdfOutput}
       />
     );
-  } else if (screen === "clients") {
+  } else if (screen === "partners") {
     content = (
-      <ClientManager
-        clients={clients}
+      <PartnerManager
+        partners={partners}
         plan={plan}
         estimateCount={estimates.length}
         onBack={() => setScreen("home")}
-        onSave={saveClients}
+        onSave={savePartners}
       />
     );
   } else if (screen === "settings") {
@@ -352,7 +332,7 @@ export default function Page() {
   } else if (screen === "pricing") {
     content = (
       <PricingPlan
-        clients={clients}
+        partners={partners}
         estimates={estimates}
         plan={plan}
         onSetPlan={setPlan}
@@ -372,7 +352,7 @@ export default function Page() {
           onNewEstimate={() => setScreen("new")}
           onSiteMasters={() => setScreen("siteMasters")}
           onList={() => setScreen("list")}
-          onClients={() => setScreen("clients")}
+          onPartners={() => setScreen("partners")}
           onSettings={() => setScreen("settings")}
           onPricing={() => setScreen("pricing")}
         />

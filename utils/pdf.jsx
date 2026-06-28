@@ -13,6 +13,7 @@ import {
   yen,
 } from "./calcProfit";
 import { DEFAULT_LABOR_UNIT_PRICE } from "../lib/constants";
+import { buildPartnerDocumentExtras } from "../lib/partner";
 
 function getStandardLaborUnitPrice(company) {
   return Number(company?.standardLaborUnitPrice ?? DEFAULT_LABOR_UNIT_PRICE);
@@ -24,6 +25,7 @@ export function InvoicePaper({ estimate, company }) {
     getInvoiceTotals(estimate, standardLaborUnitPrice);
   const display = getEstimateDisplayTotals(estimate, standardLaborUnitPrice);
   const issueDate = new Date().toLocaleDateString("ja-JP");
+  const customerExtras = buildPartnerDocumentExtras(estimate);
 
   return (
     <>
@@ -51,11 +53,16 @@ export function InvoicePaper({ estimate, company }) {
       </div>
 
       <div className="paper-to">
-        <strong>{estimate.client} 御中</strong>
+        <strong>{customerExtras.clientLine ?? `${estimate.client} 御中`}</strong>
         <p className="paper-site">現場名：{estimate.siteName}</p>
         {estimate.siteAddress && (
           <p className="paper-site">現場住所：{estimate.siteAddress}</p>
         )}
+        {customerExtras.recipientLines.map((line) => (
+          <p key={line} className="paper-site">
+            {line}
+          </p>
+        ))}
       </div>
 
       <p>下記の通りご請求申し上げます。</p>
@@ -102,6 +109,17 @@ export function InvoicePaper({ estimate, company }) {
         </div>
       </div>
 
+      {customerExtras.paymentKeyValues.length > 0 && (
+        <div className="paper-profit">
+          {customerExtras.paymentKeyValues.map(({ label, value }) => (
+            <div key={label}>
+              <span>{label}</span>
+              <span>{value}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="paper-profit">
         <div className="paper-breakdown">
           <strong>外注費内訳（管理用）</strong>
@@ -147,6 +165,7 @@ export function EstimatePaper({ estimate, company }) {
   );
   const display = getEstimateDisplayTotals(estimate, standardLaborUnitPrice);
   const estimateDate = estimate.createdAt?.split(" ")[0] || new Date().toLocaleDateString("ja-JP");
+  const customerExtras = buildPartnerDocumentExtras(estimate);
 
   return (
     <>
@@ -168,11 +187,16 @@ export function EstimatePaper({ estimate, company }) {
       </div>
 
       <div className="paper-to">
-        <strong>{estimate.client} 御中</strong>
+        <strong>{customerExtras.clientLine ?? `${estimate.client} 御中`}</strong>
         <p className="paper-site">現場名：{estimate.siteName}</p>
         {estimate.siteAddress && (
           <p className="paper-site">現場住所：{estimate.siteAddress}</p>
         )}
+        {customerExtras.recipientLines.map((line) => (
+          <p key={line} className="paper-site">
+            {line}
+          </p>
+        ))}
       </div>
 
       <p>下記の通りお見積り申し上げます。</p>

@@ -1,3 +1,5 @@
+import { buildDocumentFilename } from "../lib/documentEngine";
+
 export function formatPdfDate(date = new Date()) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -16,8 +18,7 @@ export function sanitizePdfSiteName(siteName) {
 }
 
 export function buildPdfFilename(type, siteName, date = new Date()) {
-  const prefix = type === "invoice" ? "請求書" : "見積書";
-  return `${prefix}_${sanitizePdfSiteName(siteName)}_${formatPdfDate(date)}.pdf`;
+  return buildDocumentFilename(type, siteName, date);
 }
 
 export function canSharePdfFiles() {
@@ -68,14 +69,14 @@ export function downloadPdfFile(fileOrBlob, filename) {
 }
 
 export function getAvailableSendMethods(canShare) {
-  const all = [
-    { id: "line", label: "LINE" },
-    { id: "mail", label: "メール" },
-    { id: "airdrop", label: "AirDrop" },
+  const methods = [
     { id: "pdf-save", label: "PDF保存" },
     { id: "print", label: "印刷" },
   ];
 
-  if (canShare) return all;
-  return all.filter((item) => item.id === "pdf-save");
+  if (canShare) {
+    methods.push({ id: "share", label: "共有" });
+  }
+
+  return methods;
 }

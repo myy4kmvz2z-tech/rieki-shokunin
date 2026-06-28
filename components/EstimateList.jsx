@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import {
   getEstimateDisplayTotals,
   getProfitRateColorBand,
@@ -8,8 +7,7 @@ import {
 } from "../utils/calcProfit";
 import PaymentControls from "./PaymentControls";
 import PaymentStatusBadge from "./PaymentStatusBadge";
-import PdfActionButtons from "./PdfActionButtons";
-import SendCenterSheet from "./SendCenterSheet";
+import DocumentSendButtons from "./DocumentSendButtons";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
@@ -24,34 +22,9 @@ export default function EstimateList({
   isPdfGenerating,
   onPdfBlocked,
   onPrintDocument,
-  onSendComplete,
   onAdvancePayment,
   onMarkPaid,
 }) {
-  const [pdfReadyMap, setPdfReadyMap] = useState({});
-  const [workingEstimateId, setWorkingEstimateId] = useState(null);
-  const [pdfError, setPdfError] = useState("");
-  const [sendSheet, setSendSheet] = useState(null);
-
-  const createPdf = async (estimate, type) => {
-    setPdfError("");
-    setWorkingEstimateId(estimate.id);
-
-    try {
-      const result = await onGeneratePdf(estimate, type);
-      setPdfReadyMap((prev) => ({
-        ...prev,
-        [estimate.id]: result,
-      }));
-      return result;
-    } catch (error) {
-      setPdfError(error?.message || "PDFの作成に失敗しました。");
-      throw error;
-    } finally {
-      setWorkingEstimateId(null);
-    }
-  };
-
   return (
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
@@ -60,16 +33,12 @@ export default function EstimateList({
 
       <UsageCard plan={plan} clientCount={clientCount} estimateCount={estimates.length} compact />
 
-      {pdfError && <p style={s.pdfErrorText}>{pdfError}</p>}
-
       {estimates.length === 0 ? (
         <p style={s.muted}>保存済みの見積はありません。</p>
       ) : (
         estimates.map((e) => {
           const display = getEstimateDisplayTotals(e);
           const band = getProfitRateColorBand(display.rate);
-          const pdfReady = pdfReadyMap[e.id];
-          const isWorking = workingEstimateId === e.id || isPdfGenerating;
 
           return (
             <section key={e.id} style={s.listCard}>
@@ -78,13 +47,6 @@ export default function EstimateList({
                   <PaymentStatusBadge status={e.paymentStatus} />
                   <h2 style={{ ...s.sectionTitle, marginBottom: 0 }}>{e.siteName}</h2>
                 </div>
-                <button
-                  type="button"
-                  style={s.sendBtn}
-                  onClick={() => setSendSheet({ estimate: e, docType: "estimate" })}
-                >
-                  📤 送る
-                </button>
               </div>
 
               <p style={s.listMeta}>{e.client}</p>
@@ -112,21 +74,12 @@ export default function EstimateList({
                 onMarkPaid={() => onMarkPaid(e.id)}
               />
 
-              <button
-                type="button"
-                style={s.invoiceSendBtn}
-                onClick={() => setSendSheet({ estimate: e, docType: "invoice" })}
-              >
-                請求書を送る
-              </button>
-
-              <PdfActionButtons
+              <DocumentSendButtons
                 plan={plan}
-                isWorking={isWorking}
-                pdfReady={pdfReady}
-                onCreateEstimate={() => createPdf(e, "estimate")}
-                onCreateInvoice={() => createPdf(e, "invoice")}
-                onPrintDocument={(_, docType) => onPrintDocument(e, docType)}
+                estimate={e}
+                isWorking={isPdfGenerating}
+                onGeneratePdf={onGeneratePdf}
+                onPrintDocument={onPrintDocument}
                 onPdfBlocked={onPdfBlocked}
               />
 
@@ -142,21 +95,6 @@ export default function EstimateList({
           );
         })
       )}
-
-      <SendCenterSheet
-        open={!!sendSheet}
-        estimate={sendSheet?.estimate}
-        docType={sendSheet?.docType}
-        plan={plan}
-        onClose={() => setSendSheet(null)}
-        onGeneratePdf={onGeneratePdf}
-        onPrint={onPrintDocument}
-        onPdfBlocked={onPdfBlocked}
-        onComplete={(payload) => {
-          onSendComplete?.(payload);
-          setSendSheet(null);
-        }}
-      />
     </main>
   );
 }

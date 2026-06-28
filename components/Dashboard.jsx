@@ -37,7 +37,7 @@ export default function Dashboard({
   onNewEstimate,
   onSiteMasters,
   onList,
-  onClients,
+  onPartners,
   onSettings,
   onPricing,
 }) {
@@ -126,7 +126,7 @@ export default function Dashboard({
       <SectionDivider />
 
       <section style={s.homeSection}>
-        <p style={s.homeSectionTitle}>🏆 元請利益ランキング</p>
+        <p style={s.homeSectionTitle}>🏆 取引先利益ランキング</p>
         {dashboard.clientRanking.length === 0 ? (
           <p style={s.ceoEmptyText}>ランキングデータがありません</p>
         ) : (
@@ -164,8 +164,8 @@ export default function Dashboard({
         <button style={s.btn} type="button" onClick={onList}>
           保存済み見積
         </button>
-        <button style={s.btn} type="button" onClick={onClients}>
-          元請管理
+        <button style={s.btn} type="button" onClick={onPartners}>
+          取引先管理
         </button>
         <button style={s.btn} type="button" onClick={onSettings}>
           会社設定

@@ -65,9 +65,9 @@ function PricingCard({ item, isCurrent, onSelect, onContact }) {
   );
 }
 
-export default function PricingPlan({ clients, estimates, plan, onSetPlan, onBack }) {
+export default function PricingPlan({ partners, estimates, plan, onSetPlan, onBack }) {
   const current = normalizePlan(plan);
-  const usage = getUsageSummary(plan, clients.length, estimates.length);
+  const usage = getUsageSummary(plan, partners.length, estimates.length);
 
   const handleContact = () => {
     alert("法人プランのお問い合わせは準備中です。\n後日ご連絡いたします。");
@@ -79,7 +79,7 @@ export default function PricingPlan({ clients, estimates, plan, onSetPlan, onBac
       <p style={s.pricingKicker}>料金プラン</p>
       <h1 style={{ ...s.title, marginBottom: 8 }}>{getPlanLabel(plan)}</h1>
       <p style={{ ...s.muted, marginBottom: 24, fontSize: 15 }}>
-        元請 {usage.clientCount}/{usage.clientLimitLabel} · 見積 {usage.estimateCount}/
+        取引先 {usage.clientCount}/{usage.clientLimitLabel} · 見積 {usage.estimateCount}/
         {usage.estimateLimitLabel}
       </p>
 

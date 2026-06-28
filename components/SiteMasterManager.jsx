@@ -78,8 +78,8 @@ function SiteMasterSummary({ master }) {
   );
 }
 
-function defaultsFromClient(clients, client, workType) {
-  const fromClient = getCostStructureForClient(clients, client, workType);
+function defaultsFromPartner(partners, client, workType) {
+  const fromClient = getCostStructureForClient(partners, client, workType);
   return {
     material: fromClient.material,
     pasteLabor: fromClient.pasteLabor,
@@ -93,9 +93,9 @@ function defaultsFromClient(clients, client, workType) {
   };
 }
 
-export default function SiteMasterManager({ siteMasters, clients, onBack, onSave }) {
-  const clientOptions = clients.map((c) => c.name);
-  const [form, setForm] = useState(() => emptySiteMasterForm(clients));
+export default function SiteMasterManager({ siteMasters, partners, onBack, onSave }) {
+  const partnerOptions = partners.map((partner) => partner.name);
+  const [form, setForm] = useState(() => emptySiteMasterForm(partners));
   const skipSelectionLoad = useRef(true);
 
   const setField = (key, value) => {
@@ -103,11 +103,11 @@ export default function SiteMasterManager({ siteMasters, clients, onBack, onSave
   };
 
   useEffect(() => {
-    if (clientOptions.length === 0) return;
-    if (!clientOptions.includes(form.client)) {
-      setForm((prev) => ({ ...prev, client: clientOptions[0] }));
+    if (partnerOptions.length === 0) return;
+    if (!partnerOptions.includes(form.client)) {
+      setForm((prev) => ({ ...prev, client: partnerOptions[0] }));
     }
-  }, [clientOptions, form.client]);
+  }, [partnerOptions, form.client]);
 
   useEffect(() => {
     if (!form.client || !form.workType) return;
@@ -124,13 +124,13 @@ export default function SiteMasterManager({ siteMasters, clients, onBack, onSave
 
     setForm((prev) => ({
       ...prev,
-      ...defaultsFromClient(clients, form.client, form.workType),
+      ...defaultsFromPartner(partners, form.client, form.workType),
     }));
-  }, [form.client, form.workType, siteMasters, clients]);
+  }, [form.client, form.workType, siteMasters, partners]);
 
   const handleSave = () => {
     if (!form.client) {
-      alert("元請を選択してください。");
+      alert("取引先を選択してください。");
       return;
     }
     const normalized = normalizeSiteMaster(form);
@@ -154,10 +154,10 @@ export default function SiteMasterManager({ siteMasters, clients, onBack, onSave
     if (form.client === master.client && form.workType === master.workType) {
       skipSelectionLoad.current = true;
       setForm({
-        ...emptySiteMasterForm(clients),
+        ...emptySiteMasterForm(partners),
         client: master.client,
         workType: master.workType,
-        ...defaultsFromClient(clients, master.client, master.workType),
+        ...defaultsFromPartner(partners, master.client, master.workType),
       });
     }
   };
@@ -173,12 +173,12 @@ export default function SiteMasterManager({ siteMasters, clients, onBack, onSave
     return WORK_TYPES.indexOf(a.workType) - WORK_TYPES.indexOf(b.workType);
   });
 
-  if (clientOptions.length === 0) {
+  if (partnerOptions.length === 0) {
     return (
       <main style={s.page}>
         <button style={s.back} onClick={onBack}>← 戻る</button>
         <h1 style={s.title}>現場マスター</h1>
-        <p style={s.muted}>元請を先に登録してください。</p>
+        <p style={s.muted}>取引先を先に登録してください。</p>
       </main>
     );
   }
@@ -189,16 +189,16 @@ export default function SiteMasterManager({ siteMasters, clients, onBack, onSave
     <main style={s.page}>
       <button style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>現場マスター</h1>
-      <p style={s.sub}>元請 → 工事項目 → 設定。見積では2つ選ぶだけで自動入力されます。</p>
+      <p style={s.sub}>取引先 → 工事項目 → 設定。見積では2つ選ぶだけで自動入力されます。</p>
 
       <section style={s.listCard}>
         <h2 style={s.sectionTitle}>設定を編集</h2>
         <div style={s.form}>
           <Select
-            label="元請"
+            label="取引先"
             value={form.client}
             setValue={(v) => setField("client", v)}
-            options={clientOptions}
+            options={partnerOptions}
           />
           <Select
             label="工事項目"

@@ -2,6 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
+  applyPartnerSelection,
+  createPartnerSnapshot,
+  findPartnerByName,
+} from "../lib/partner";
+import {
   DEFAULT_LABOR_UNIT_PRICE,
   DEFAULT_TARGET_PROFIT_RATE,
   WORK_TYPES,
@@ -26,7 +31,7 @@ import {
 import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
-import PdfActionButtons from "./PdfActionButtons";
+import DocumentSendButtons from "./DocumentSendButtons";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, LaborCountStepper, Select } from "./FormFields";
 
@@ -138,15 +143,15 @@ function getInitialOutsourcingState(initialEstimate, fromClient, company) {
 }
 
 function getInitialCostState(
-  clients,
+  partners,
   siteMasters,
   initialEstimate,
   defaultClient,
   defaultWorkType,
   company
 ) {
-  const synced = getEstimateSyncFromSiteMaster(clients, siteMasters, defaultClient, defaultWorkType);
-  const fromClient = getCostStructureForClient(clients, defaultClient, defaultWorkType);
+  const synced = getEstimateSyncFromSiteMaster(partners, siteMasters, defaultClient, defaultWorkType);
+  const fromClient = getCostStructureForClient(partners, defaultClient, defaultWorkType);
 
   if (!initialEstimate) {
     return {
@@ -170,21 +175,21 @@ function getInitialCostState(
   const material =
     initialEstimate.material ??
     getEstimateSyncFromSiteMaster(
-      clients,
+      partners,
       siteMasters,
       initialEstimate.client ?? defaultClient,
       initialEstimate.workType ?? defaultWorkType
     ).material;
 
   const editSynced = getEstimateSyncFromSiteMaster(
-    clients,
+    partners,
     siteMasters,
     initialEstimate.client ?? defaultClient,
     initialEstimate.workType ?? defaultWorkType
   );
 
   const editClient = getCostStructureForClient(
-    clients,
+    partners,
     initialEstimate.client ?? defaultClient,
     initialEstimate.workType ?? defaultWorkType
   );
@@ -204,7 +209,7 @@ function getInitialCostState(
 }
 
 export default function EstimateForm({
-  clients,
+  partners,
   siteMasters = [],
   company,
   plan,
@@ -219,12 +224,15 @@ export default function EstimateForm({
   isQuickEstimate = false,
 }) {
   const editing = !!initialEstimate && !isCopy && !isQuickEstimate;
-  const defaultClient = clients[0]?.name || "";
+  const defaultClient = partners[0]?.name || "";
   const defaultWorkType = initialEstimate?.workType ?? "クロス SP";
   const skipClientSync = useRef(editing || isCopy || isQuickEstimate);
+  const skipPartnerSync = useRef(
+    Boolean(initialEstimate?.partner || initialEstimate?.customer)
+  );
 
   const initialCost = getInitialCostState(
-    clients,
+    partners,
     siteMasters,
     initialEstimate,
     initialEstimate?.client ?? defaultClient,
@@ -234,7 +242,7 @@ export default function EstimateForm({
   const initialTransport = getInitialTransportState(
     initialEstimate,
     getCostStructureForClient(
-      clients,
+      partners,
       initialEstimate?.client ?? defaultClient,
       defaultWorkType
     ).transport,
@@ -243,6 +251,16 @@ export default function EstimateForm({
 
   const [siteName, setSiteName] = useState(initialEstimate?.siteName ?? "");
   const [siteAddress, setSiteAddress] = useState(initialEstimate?.siteAddress ?? "");
+  const [partnerSnapshot, setPartnerSnapshot] = useState(
+    initialEstimate?.partner ??
+      (initialEstimate?.customer
+        ? createPartnerSnapshot({
+            id: initialEstimate.customer.id,
+            name: initialEstimate.customer.companyName,
+            ...initialEstimate.customer,
+          })
+        : null)
+  );
   const [client, setClient] = useState(initialEstimate?.client ?? defaultClient);
   const [workType, setWorkType] = useState(defaultWorkType);
   const [area, setArea] = useState(
@@ -284,8 +302,6 @@ export default function EstimateForm({
     initialTransport.currentLocationLabel
   );
   const [showTransportDetails, setShowTransportDetails] = useState(false);
-  const [pdfReady, setPdfReady] = useState(null);
-  const [isCreatingPdf, setIsCreatingPdf] = useState(false);
 
   const handleTransportFeeMethodChange = (method) => {
     setTransportFeeMethod(method);
@@ -303,8 +319,8 @@ export default function EstimateForm({
     transportFeeMethod === "gps" ? TRANSPORT_MODE_GPS : TRANSPORT_MODE_FIXED;
 
   useEffect(() => {
-    if (!clients.some((c) => c.name === client) && clients[0]) {
-      setClient(clients[0].name);
+    if (!partners.some((partner) => partner.name === client) && partners[0]) {
+      setClient(partners[0].name);
       return;
     }
     if (skipClientSync.current) {
@@ -312,7 +328,7 @@ export default function EstimateForm({
       return;
     }
 
-    const synced = getEstimateSyncFromSiteMaster(clients, siteMasters, client, workType);
+    const synced = getEstimateSyncFromSiteMaster(partners, siteMasters, client, workType);
     setMaterial(synced.material);
     setPasteLabor(synced.pasteLabor);
     setSubstrate(synced.substrate);
@@ -325,9 +341,40 @@ export default function EstimateForm({
     if (transportFeeMethod === "manual") {
       setFixedTransport(synced.fixedTransport);
     }
-  }, [clients, siteMasters, client, workType, transportFeeMethod]);
+  }, [partners, siteMasters, client, workType, transportFeeMethod]);
 
-  const clientOptions = clients.map((c) => c.name);
+  useEffect(() => {
+    const partner = findPartnerByName(partners, client);
+    if (!partner) {
+      if (!skipPartnerSync.current) {
+        setPartnerSnapshot(null);
+      }
+      return;
+    }
+
+    if (skipPartnerSync.current) {
+      skipPartnerSync.current = false;
+      setPartnerSnapshot(
+        initialEstimate?.partner ??
+          (initialEstimate?.customer
+            ? createPartnerSnapshot({
+                id: initialEstimate.customer.id,
+                name: initialEstimate.customer.companyName,
+                ...initialEstimate.customer,
+              })
+            : createPartnerSnapshot(partner))
+      );
+      return;
+    }
+
+    const applied = applyPartnerSelection({ partner, siteAddress });
+    setPartnerSnapshot(applied.partnerSnapshot);
+    if (!siteAddress.trim() && applied.siteAddress) {
+      setSiteAddress(applied.siteAddress);
+    }
+  }, [client, partners]);
+
+  const partnerOptions = partners.map((partner) => partner.name);
   const totals = calcEstimateTotals({
     area,
     material,
@@ -429,29 +476,15 @@ export default function EstimateForm({
     rate: totals.rate,
     paymentStatus: initialEstimate?.paymentStatus,
     createdAt: initialEstimate?.createdAt ?? new Date().toLocaleString("ja-JP"),
+    ...(partnerSnapshot ? { partner: partnerSnapshot } : {}),
   });
 
-  const handleCreatePdf = async (type) => {
-    if (!pdfEnabled) {
-      onPdfBlocked?.();
-      return;
-    }
-
-    setIsCreatingPdf(true);
-    try {
-      const result = await onGeneratePdf(buildEstimate(), type);
-      setPdfReady(result);
-    } finally {
-      setIsCreatingPdf(false);
-    }
-  };
-
-  if (clientOptions.length === 0) {
+  if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
         <button style={s.back} onClick={onBack}>← 戻る</button>
         <h1 style={s.estimatePageTitle}>見積作成</h1>
-        <p style={s.muted}>元請が未登録です。</p>
+        <p style={s.muted}>取引先が未登録です。</p>
       </main>
     );
   }
@@ -483,7 +516,7 @@ export default function EstimateForm({
             {client} · {getQuickWorkTypeLabel(workType)}
           </p>
           <p style={s.quickEstimateFormHint}>
-            元請・原価・外注方式・目標利益率は現場マスターから自動入力済みです。
+            取引先・原価・外注方式・目標利益率は現場マスターから自動入力済みです。
           </p>
           <div style={s.estimateCostHero}>
             <div style={s.estimateHeroDivider} />
@@ -498,7 +531,35 @@ export default function EstimateForm({
         <Input large label="現場名" value={siteName} setValue={setSiteName} />
         {!isQuickEstimate && (
           <>
-            <Select large label="元請" value={client} setValue={setClient} options={clientOptions} />
+            <Select
+              large
+              label="取引先"
+              value={client}
+              setValue={setClient}
+              options={partnerOptions}
+            />
+            {partnerSnapshot && (
+              <div style={s.customerPreview}>
+                <p style={s.customerPreviewTitle}>取引先情報（自動反映）</p>
+                {[
+                  partnerSnapshot.contactPerson && `担当：${partnerSnapshot.contactPerson}`,
+                  partnerSnapshot.phone && `TEL ${partnerSnapshot.phone}`,
+                  partnerSnapshot.email && `Mail ${partnerSnapshot.email}`,
+                  partnerSnapshot.line && `LINE ${partnerSnapshot.line}`,
+                  partnerSnapshot.address && `住所：${partnerSnapshot.address}`,
+                  partnerSnapshot.closingDay && `締日：${partnerSnapshot.closingDay}`,
+                  partnerSnapshot.paymentDay && `支払日：${partnerSnapshot.paymentDay}`,
+                  partnerSnapshot.paymentMethod && `支払方法：${partnerSnapshot.paymentMethod}`,
+                  partnerSnapshot.bankAccount && `振込先：${partnerSnapshot.bankAccount}`,
+                ]
+                  .filter(Boolean)
+                  .map((line) => (
+                    <p key={line} style={s.customerPreviewLine}>
+                      {line}
+                    </p>
+                  ))}
+              </div>
+            )}
             <Input large label="現場住所" value={siteAddress} setValue={setSiteAddress} />
             <Select
               large
@@ -730,13 +791,12 @@ export default function EstimateForm({
         </button>
       </div>
 
-      <PdfActionButtons
+      <DocumentSendButtons
         plan={plan}
-        isWorking={isCreatingPdf || isPdfGenerating}
-        pdfReady={pdfReady}
-        onCreateEstimate={() => handleCreatePdf("estimate")}
-        onCreateInvoice={() => handleCreatePdf("invoice")}
-        onPrintDocument={(docType) => onPrintDocument?.(buildEstimate(), docType)}
+        getEstimate={buildEstimate}
+        isWorking={isPdfGenerating}
+        onGeneratePdf={onGeneratePdf}
+        onPrintDocument={onPrintDocument}
         onPdfBlocked={onPdfBlocked}
       />
     </main>
