@@ -22,7 +22,7 @@ import {
 import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
 import ConfirmModal from "./ConfirmModal";
-import UsageCard from "./UsageCard";
+// import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
 function createEmptyPartner() {
@@ -241,7 +241,8 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
         会社情報・請求情報・単価情報をまとめて管理します。見積・請求・送信で利用されます。
       </p>
 
-      <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
+      {/* 一時確認: UsageCard が取引先追加ボタンを覆っていないか */}
+      {/* <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact /> */}
 
       {!showAddForm ? (
         <button
