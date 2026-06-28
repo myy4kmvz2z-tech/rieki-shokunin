@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   COST_UNIT_FIELDS,
   OUTSOURCING_MODES,
@@ -21,7 +22,6 @@ import {
 import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
 import ConfirmModal from "./ConfirmModal";
-import BackLink from "./BackLink";
 import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
@@ -160,6 +160,7 @@ function validatePartnerForm(form) {
 }
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
+  const router = useRouter();
   const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -231,7 +232,9 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
 
   return (
     <main style={s.page}>
-      <BackLink href="/dashboard" />
+      <button type="button" style={s.back} onClick={() => router.push("/dashboard")}>
+        ← 戻る
+      </button>
       <h1 style={s.title}>取引先管理</h1>
       <p style={s.muted}>
         会社情報・請求情報・単価情報をまとめて管理します。見積・請求・送信で利用されます。
