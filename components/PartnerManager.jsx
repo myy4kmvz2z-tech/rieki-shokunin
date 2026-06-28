@@ -170,12 +170,6 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
     setEditingPartner((prev) => ({ ...prev, [key]: value }));
   };
 
-  const openAddForm = () => {
-    setEditingId(null);
-    setEditingPartner(createEmptyPartner());
-    setIsEditing(true);
-  };
-
   const closeAddForm = () => {
     setIsEditing(false);
     setEditingPartner(createEmptyPartner());
@@ -246,7 +240,14 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
       <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
 
       {!isEditing ? (
-        <button type="button" style={s.btnPrimary} onClick={openAddForm}>
+        <button
+          type="button"
+          style={s.btnPrimary}
+          onClick={() => {
+            setEditingPartner(createEmptyPartner());
+            setIsEditing(true);
+          }}
+        >
           ＋ 取引先を追加
         </button>
       ) : (
