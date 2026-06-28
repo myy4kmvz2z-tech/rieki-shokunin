@@ -25,6 +25,10 @@ import BackLink from "./BackLink";
 import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
+function createEmptyPartner() {
+  return emptyPartnerForm();
+}
+
 function PartnerSettingsForm({ form, setField }) {
   return (
     <>
@@ -147,7 +151,7 @@ function PartnerFieldList({ partner }) {
 }
 
 function validatePartnerForm(form) {
-  const name = form.name.trim();
+  const name = String(form.name ?? "").trim();
   if (!name) {
     alert("会社名を入力してください。");
     return null;
@@ -156,23 +160,29 @@ function validatePartnerForm(form) {
 }
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
-  const [form, setForm] = useState(emptyPartnerForm());
+  const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
+  const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState(emptyPartnerForm());
-  const [showAddForm, setShowAddForm] = useState(false);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
-  const setFormField = (key, value) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const setEditingField = (key, value) => {
+    setEditingPartner((prev) => ({ ...prev, [key]: value }));
   };
 
-  const setEditField = (key, value) => {
-    setEditForm((prev) => ({ ...prev, [key]: value }));
+  const openAddForm = () => {
+    setEditingId(null);
+    setEditingPartner(createEmptyPartner());
+    setIsEditing(true);
+  };
+
+  const closeAddForm = () => {
+    setIsEditing(false);
+    setEditingPartner(createEmptyPartner());
   };
 
   const handleAdd = () => {
-    const name = validatePartnerForm(form);
+    const name = validatePartnerForm(editingPartner);
     if (!name) return;
 
     if (partners.some((partner) => partner.name === name)) {
@@ -184,23 +194,23 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
       return;
     }
 
-    onSave([...partners, normalizePartner({ ...form, name, id: Date.now() })]);
-    setForm(emptyPartnerForm());
-    setShowAddForm(false);
+    onSave([...partners, normalizePartner({ ...editingPartner, name, id: Date.now() })]);
+    closeAddForm();
   };
 
   const startEdit = (partner) => {
+    setIsEditing(false);
     setEditingId(partner.id);
-    setEditForm(normalizePartner({ ...partner }));
+    setEditingPartner(normalizePartner({ ...partner }));
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm(emptyPartnerForm());
+    setEditingPartner(createEmptyPartner());
   };
 
   const handleUpdate = () => {
-    const name = validatePartnerForm(editForm);
+    const name = validatePartnerForm(editingPartner);
     if (!name) return;
 
     if (partners.some((partner) => partner.name === name && partner.id !== editingId)) {
@@ -211,7 +221,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
     onSave(
       partners.map((partner) =>
         partner.id === editingId
-          ? normalizePartner({ ...editForm, name, id: editingId })
+          ? normalizePartner({ ...editingPartner, name, id: editingId })
           : partner
       )
     );
@@ -235,24 +245,24 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
 
       <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
 
-      {!showAddForm ? (
-        <button style={s.btnPrimary} type="button" onClick={() => setShowAddForm(true)}>
+      {!isEditing ? (
+        <button type="button" style={s.btnPrimary} onClick={openAddForm}>
           ＋ 取引先を追加
         </button>
       ) : (
         <section style={s.listCard}>
           <h2 style={s.sectionTitle}>新規取引先</h2>
           <div style={s.form}>
-            <PartnerSettingsForm form={form} setField={setFormField} />
+            <PartnerSettingsForm form={editingPartner} setField={setEditingField} />
           </div>
-            <div style={s.rowActions}>
-              <button style={s.save} type="button" onClick={handleAdd}>
-                追加
-              </button>
-              <button style={s.secondary} type="button" onClick={() => setShowAddForm(false)}>
-                キャンセル
-              </button>
-            </div>
+          <div style={s.rowActions}>
+            <button type="button" style={s.save} onClick={handleAdd}>
+              追加
+            </button>
+            <button type="button" style={s.secondary} onClick={closeAddForm}>
+              キャンセル
+            </button>
+          </div>
         </section>
       )}
 
@@ -265,13 +275,13 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
               <>
                 <h2 style={s.sectionTitle}>{partner.name}</h2>
                 <div style={s.form}>
-                  <PartnerSettingsForm form={editForm} setField={setEditField} />
+                  <PartnerSettingsForm form={editingPartner} setField={setEditingField} />
                 </div>
                 <div style={s.rowActions}>
-                  <button style={s.save} type="button" onClick={handleUpdate}>
+                  <button type="button" style={s.save} onClick={handleUpdate}>
                     保存
                   </button>
-                  <button style={s.secondary} type="button" onClick={cancelEdit}>
+                  <button type="button" style={s.secondary} onClick={cancelEdit}>
                     キャンセル
                   </button>
                 </div>
@@ -281,14 +291,10 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
                 <h2 style={{ ...s.sectionTitle, marginBottom: 16 }}>{partner.name}</h2>
                 <PartnerFieldList partner={partner} />
                 <div style={{ ...s.rowActions, marginTop: 16 }}>
-                  <button style={s.editBtn} type="button" onClick={() => startEdit(partner)}>
+                  <button type="button" style={s.editBtn} onClick={() => startEdit(partner)}>
                     編集
                   </button>
-                  <button
-                    style={s.delete}
-                    type="button"
-                    onClick={() => setDeleteTarget(partner)}
-                  >
+                  <button type="button" style={s.delete} onClick={() => setDeleteTarget(partner)}>
                     削除
                   </button>
                 </div>
