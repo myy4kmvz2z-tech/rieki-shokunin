@@ -87,14 +87,14 @@ function OutsourcingLaborCountField({ value, onChange }) {
         </p>
       )}
       <div style={s.laborStepperRow}>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5減らす"
-          onPress={() => stepBy(-LABOR_COUNT_STEP)}
+          onClick={() => stepBy(-LABOR_COUNT_STEP)}
         >
           −
-        </SafeButton>
+        </button>
         <div style={s.laborStepperValueWrap}>
           <input
             style={s.laborStepperInput}
@@ -116,14 +116,14 @@ function OutsourcingLaborCountField({ value, onChange }) {
           />
           <span style={s.laborStepperSuffix}>人工</span>
         </div>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5増やす"
-          onPress={() => stepBy(LABOR_COUNT_STEP)}
+          onClick={() => stepBy(LABOR_COUNT_STEP)}
         >
           ＋
-        </SafeButton>
+        </button>
       </div>
     </div>
   );
@@ -791,13 +791,13 @@ export default function EstimateForm({
             </div>
             <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
             <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
-            <SafeButton
+            <button
               type="button"
               style={s.estimateDetailToggleBtn}
-              onPress={() => setShowTransportDetails((open) => !open)}
+              onClick={() => setShowTransportDetails((open) => !open)}
             >
               {showTransportDetails ? "詳細設定を閉じる" : "詳細設定"}
-            </SafeButton>
+            </button>
             {showTransportDetails && (
               <>
                 <Input
@@ -855,14 +855,14 @@ export default function EstimateForm({
                   : "—"}
               </p>
             </div>
-            <SafeButton
+            <button
               type="button"
               style={s.estimateApplyBtn}
               disabled={!profitSimulator.canCalculate}
-              onPress={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+              onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
             >
               販売単価へ反映
-            </SafeButton>
+            </button>
             <Collapsible label="詳細（値引き・目標利益率）">
               <Input large label="値引き 円" value={discount} setValue={setDiscount} type="number" />
               <Input
@@ -889,9 +889,9 @@ export default function EstimateForm({
       <AiCeoComment message={aiMessage} />
 
       <div style={s.estimateActions}>
-        <SafeButton style={s.save} type="button" onPress={() => onSave(buildEstimate())}>
+        <button style={s.save} type="button" onClick={() => onSave(buildEstimate())}>
           見積を保存
-        </SafeButton>
+        </button>
       </div>
 
       <DocumentSendButtons
