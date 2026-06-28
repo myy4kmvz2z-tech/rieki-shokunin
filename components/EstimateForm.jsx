@@ -91,6 +91,7 @@ function OutsourcingLaborCountField({ value, onChange }) {
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5減らす"
+          tapLabel="人工数-"
           onPress={() => stepBy(-LABOR_COUNT_STEP)}
         >
           −
@@ -120,6 +121,7 @@ function OutsourcingLaborCountField({ value, onChange }) {
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5増やす"
+          tapLabel="人工数+"
           onPress={() => stepBy(LABOR_COUNT_STEP)}
         >
           ＋
@@ -585,7 +587,7 @@ export default function EstimateForm({
   if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
-        <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+        <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
         <h1 style={s.estimatePageTitle}>見積作成</h1>
         <p style={s.muted}>取引先が未登録です。</p>
       </main>
@@ -602,7 +604,7 @@ export default function EstimateForm({
 
   return (
     <main style={s.estimatePage}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.estimatePageTitle}>
         {isQuickEstimate
           ? "ワンタップ見積"
@@ -889,7 +891,12 @@ export default function EstimateForm({
       <AiCeoComment message={aiMessage} />
 
       <div style={s.estimateActions}>
-        <SafeButton style={s.save} type="button" onPress={() => onSave(buildEstimate())}>
+        <SafeButton
+          style={s.save}
+          type="button"
+          tapLabel="保存"
+          onPress={() => onSave(buildEstimate())}
+        >
           見積を保存
         </SafeButton>
       </div>

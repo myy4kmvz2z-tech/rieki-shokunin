@@ -178,6 +178,8 @@ export default function Page() {
       <main style={s.page}>
         <SafeButton
           style={s.back}
+          type="button"
+          tapLabel="戻る"
           onPress={() => {
             setEditingId(null);
             setScreen("list");
@@ -219,6 +221,8 @@ export default function Page() {
       <main style={s.page}>
         <SafeButton
           style={s.back}
+          type="button"
+          tapLabel="戻る"
           onPress={() => {
             setCopySourceId(null);
             setScreen("list");
@@ -262,6 +266,8 @@ export default function Page() {
       <main style={s.page}>
         <SafeButton
           style={s.back}
+          type="button"
+          tapLabel="戻る"
           onPress={() => {
             setQuickEstimateTarget(null);
             setScreen("home");

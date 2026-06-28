@@ -1,48 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
-
-const DEFAULT_COOLDOWN_MS = 400;
+import { useCallback, useRef } from "react";
 
 /**
- * iPhone Safari 向けタップ処理。
- * React の passive touch リスナー問題を避けるため、button に native touchend を付与する。
+ * iPhone Safari 向けタップ処理（シンプル版）。
+ * onClick を基本とし、touch 後の click 二重発火だけ抑止する。
  */
-export function useTapHandler(handler, disabled = false, cooldownMs = DEFAULT_COOLDOWN_MS) {
-  const ref = useRef(null);
+export function useTapHandler(handler, disabled = false) {
   const handlerRef = useRef(handler);
-  const lastFiredRef = useRef(0);
+  const skipClickRef = useRef(false);
 
   handlerRef.current = handler;
 
-  const runHandler = useCallback(
+  const invoke = useCallback(
     (event) => {
       if (disabled) return;
-      const now = Date.now();
-      if (now - lastFiredRef.current < cooldownMs) return;
-      lastFiredRef.current = now;
-      handlerRef.current?.(event);
+      if (typeof handlerRef.current !== "function") return;
+      handlerRef.current(event);
     },
-    [disabled, cooldownMs]
+    [disabled]
   );
 
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || disabled) return;
-
-    function onTouchEnd(event) {
-      if (event.cancelable) {
-        event.preventDefault();
+  const onClick = useCallback(
+    (event) => {
+      if (skipClickRef.current) {
+        skipClickRef.current = false;
+        return;
       }
-      runHandler(event);
-    }
+      invoke(event);
+    },
+    [invoke]
+  );
 
-    element.addEventListener("touchend", onTouchEnd, { passive: false });
-    return () => element.removeEventListener("touchend", onTouchEnd);
-  }, [disabled, runHandler]);
+  const onTouchEnd = useCallback(
+    (event) => {
+      skipClickRef.current = true;
+      invoke(event);
+      window.setTimeout(() => {
+        skipClickRef.current = false;
+      }, 400);
+    },
+    [invoke]
+  );
 
-  const onClick = runHandler;
-  const onPointerUp = runHandler;
-
-  return { ref, onClick, onPointerUp };
+  return { onClick, onTouchEnd };
 }

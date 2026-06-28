@@ -86,6 +86,7 @@ export default function DocumentSendButtons({
               type="button"
               style={{ ...buttonStyle, opacity: disabled ? 0.5 : 1 }}
               disabled={disabled}
+              tapLabel="送る"
               onPress={() => openMenu(docType)}
             >
               {busy && openDocType === docType ? "処理中…" : `📤 ${definition.sendLabel}`}

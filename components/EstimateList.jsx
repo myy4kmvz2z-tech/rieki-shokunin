@@ -28,7 +28,7 @@ export default function EstimateList({
 }) {
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.title}>保存済み見積</h1>
       <p style={s.sub}>見積中 → 送付済 → 請求済 → 入金待ち → 入金済</p>
 
@@ -88,7 +88,7 @@ export default function EstimateList({
                 <SafeButton style={s.copyBtn} onPress={() => onCopy(e.id)}>
                   📋 コピー
                 </SafeButton>
-                <SafeButton style={s.editBtn} onPress={() => onEdit(e.id)}>
+                <SafeButton style={s.editBtn} type="button" tapLabel="編集" onPress={() => onEdit(e.id)}>
                   編集
                 </SafeButton>
               </div>

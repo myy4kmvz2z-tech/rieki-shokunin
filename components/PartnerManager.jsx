@@ -227,7 +227,7 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>
+      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>
         ← 戻る
       </SafeButton>
       <h1 style={s.title}>取引先管理</h1>
@@ -238,7 +238,12 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
       <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
 
       {!showAddForm ? (
-        <SafeButton style={s.btnPrimary} type="button" onPress={() => setShowAddForm(true)}>
+        <SafeButton
+          style={s.btnPrimary}
+          type="button"
+          tapLabel="取引先追加"
+          onPress={() => setShowAddForm(true)}
+        >
           ＋ 取引先を追加
         </SafeButton>
       ) : (
@@ -248,7 +253,7 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
             <PartnerSettingsForm form={form} setField={setFormField} />
           </div>
             <div style={s.rowActions}>
-              <SafeButton style={s.save} type="button" onPress={handleAdd}>
+              <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleAdd}>
                 追加
               </SafeButton>
               <SafeButton style={s.secondary} type="button" onPress={() => setShowAddForm(false)}>
@@ -270,7 +275,7 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
                   <PartnerSettingsForm form={editForm} setField={setEditField} />
                 </div>
                 <div style={s.rowActions}>
-                  <SafeButton style={s.save} type="button" onPress={handleUpdate}>
+                  <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleUpdate}>
                     保存
                   </SafeButton>
                   <SafeButton style={s.secondary} type="button" onPress={cancelEdit}>
@@ -283,12 +288,18 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
                 <h2 style={{ ...s.sectionTitle, marginBottom: 16 }}>{partner.name}</h2>
                 <PartnerFieldList partner={partner} />
                 <div style={{ ...s.rowActions, marginTop: 16 }}>
-                  <SafeButton style={s.editBtn} type="button" onPress={() => startEdit(partner)}>
+                  <SafeButton
+                    style={s.editBtn}
+                    type="button"
+                    tapLabel="編集"
+                    onPress={() => startEdit(partner)}
+                  >
                     編集
                   </SafeButton>
                   <SafeButton
                     style={s.delete}
                     type="button"
+                    tapLabel="削除"
                     onPress={() => setDeleteTarget(partner)}
                   >
                     削除

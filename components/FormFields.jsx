@@ -46,6 +46,7 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
           type="button"
           style={s.laborStepperBtn}
           aria-label={`人工数を${LABOR_COUNT_STEP}減らす`}
+          tapLabel="人工数-"
           onPress={() => step(-LABOR_COUNT_STEP)}
         >
           −
@@ -75,6 +76,7 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
           type="button"
           style={s.laborStepperBtn}
           aria-label={`人工数を${LABOR_COUNT_STEP}増やす`}
+          tapLabel="人工数+"
           onPress={() => step(LABOR_COUNT_STEP)}
         >
           ＋

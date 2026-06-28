@@ -53,7 +53,7 @@ export default function CompanySettings({ company, onBack, onSave }) {
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.title}>会社設定</h1>
 
       <section style={s.listCard}>
@@ -131,7 +131,7 @@ export default function CompanySettings({ company, onBack, onSave }) {
         </div>
       </section>
 
-      <SafeButton style={s.save} onPress={handleSave}>保存する</SafeButton>
+      <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleSave}>保存する</SafeButton>
     </main>
   );
 }

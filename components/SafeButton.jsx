@@ -1,26 +1,36 @@
 "use client";
 
+import { useCallback } from "react";
 import { useTapHandler } from "../hooks/useTapHandler";
 
 export default function SafeButton({
   onPress,
   onClick,
+  tapLabel,
   type = "button",
   disabled = false,
   children,
   ...props
 }) {
-  const action = onPress ?? onClick;
-  const { ref, onClick: handleClick, onPointerUp } = useTapHandler(action, disabled);
+  const action = useCallback(
+    (event) => {
+      if (tapLabel) {
+        console.log(`[tap] ${tapLabel}`);
+      }
+      (onPress ?? onClick)?.(event);
+    },
+    [tapLabel, onPress, onClick]
+  );
+
+  const { onClick: handleClick, onTouchEnd } = useTapHandler(action, disabled);
 
   return (
     <button
-      ref={ref}
       type={type}
       disabled={disabled}
       {...props}
       onClick={handleClick}
-      onPointerUp={onPointerUp}
+      onTouchEnd={onTouchEnd}
     >
       {children}
     </button>
