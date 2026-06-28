@@ -161,6 +161,7 @@ function validatePartnerForm(form) {
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
   const router = useRouter();
+  const onBack = () => router.push("/dashboard");
   const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -232,7 +233,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
 
   return (
     <main style={s.page}>
-      <button type="button" style={s.back} onClick={() => router.push("/dashboard")}>
+      <button type="button" style={s.back} onClick={onBack}>
         ← 戻る
       </button>
       <h1 style={s.title}>取引先管理</h1>
@@ -263,7 +264,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
             <button type="button" style={s.save} onClick={handleAdd}>
               追加
             </button>
-            <button type="button" style={s.secondary} onClick={closeAddForm}>
+            <button type="button" style={s.secondary} onClick={() => setShowAddForm(false)}>
               キャンセル
             </button>
           </div>
