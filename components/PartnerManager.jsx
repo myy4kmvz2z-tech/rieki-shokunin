@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   COST_UNIT_FIELDS,
   OUTSOURCING_MODES,
@@ -159,6 +160,8 @@ function validatePartnerForm(form) {
 }
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
+  const router = useRouter();
+  const onBack = () => router.push("/dashboard");
   const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -247,10 +250,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
           pointerEvents: "auto",
           touchAction: "manipulation",
         }}
-        onClick={() => {
-          alert("戻る");
-          window.location.href = "/dashboard";
-        }}
+        onClick={onBack}
       >
         ← 戻る
       </button>
@@ -272,10 +272,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
             pointerEvents: "auto",
             touchAction: "manipulation",
           }}
-          onClick={() => {
-            alert("取引先追加");
-            setShowAddForm(true);
-          }}
+          onClick={() => setShowAddForm(true)}
         >
           ＋ 取引先を追加
         </button>
