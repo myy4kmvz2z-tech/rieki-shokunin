@@ -10,10 +10,12 @@ export const yen = (n) => `¥${Number(n || 0).toLocaleString()}`;
 
 export const LABOR_COUNT_STEP = 0.5;
 
+/** 人工数を0.5刻みに丸める（0以下は0）。例: 0.3→0.5, 0.8→1.0, 1.2→1.0, 1.3→1.5 */
 export function normalizeLaborCount(value) {
-  const n = Number(value || 0);
+  const n = Number(value);
   if (Number.isNaN(n) || n <= 0) return 0;
-  return Math.round(n / LABOR_COUNT_STEP) * LABOR_COUNT_STEP;
+  const steps = Math.round(n / LABOR_COUNT_STEP);
+  return Number((steps * LABOR_COUNT_STEP).toFixed(1));
 }
 
 export function formatLaborCountLabel(count) {
@@ -158,7 +160,10 @@ export function normalizeEstimateOutsourcing(
   standardLaborUnitPrice = DEFAULT_LABOR_UNIT_PRICE
 ) {
   const outsourcingMode = estimate?.outsourcingMode === "sqm" ? "sqm" : "labor";
-  const laborCount = normalizeLaborCount(estimate?.laborCount ?? 0);
+  const laborCount =
+    outsourcingMode === "sqm"
+      ? 0
+      : normalizeLaborCount(estimate?.laborCount ?? 0);
   const laborUnitPrice = Number(estimate?.laborUnitPrice ?? standardLaborUnitPrice);
   const outsourcingSqmUnitPrice = Number(estimate?.outsourcingSqmUnitPrice ?? 0);
   const labor = calcOutsourcingCost({
@@ -557,7 +562,8 @@ export function calcEstimateTotals({
     travelCostTotal,
     parkingFee: parking,
     outsourcingMode: outsourcingModeValue,
-    laborCount: normalizeLaborCount(laborCount),
+    laborCount:
+      outsourcingModeValue === "sqm" ? 0 : normalizeLaborCount(laborCount),
     laborUnitPrice: Number(laborUnitPrice || 0),
     outsourcingSqmUnitPrice: Number(outsourcingSqmUnitPrice || 0),
     labor: outsourcingCost,

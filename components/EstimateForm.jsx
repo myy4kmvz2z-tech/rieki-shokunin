@@ -32,8 +32,102 @@ import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
 import DocumentSendButtons from "./DocumentSendButtons";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
-import { CardButtonGroup, Collapsible, Input, LaborCountStepper, Select } from "./FormFields";
+import { CardButtonGroup, Collapsible, Input, Select } from "./FormFields";
+
+const LABOR_COUNT_STEP = 0.5;
+
+function sanitizeLaborCountDraft(raw) {
+  const cleaned = raw.replace(/[^\d.]/g, "");
+  const parts = cleaned.split(".");
+  if (parts.length <= 1) return cleaned;
+  return `${parts[0]}.${parts.slice(1).join("").slice(0, 1)}`;
+}
+
+function parseLaborCountDraft(raw) {
+  if (raw === "" || raw === ".") return 0;
+  const n = Number(raw);
+  return Number.isNaN(n) ? 0 : normalizeLaborCount(n);
+}
+
+function formatLaborCountDisplay(count) {
+  return `${normalizeLaborCount(count).toFixed(1)}人工`;
+}
+
+function OutsourcingLaborCountField({ value, onChange }) {
+  const [focused, setFocused] = useState(false);
+  const [draft, setDraft] = useState("");
+  const count = normalizeLaborCount(value);
+
+  const applyCount = (next) => {
+    onChange(normalizeLaborCount(next));
+  };
+
+  const stepBy = (delta) => {
+    onChange((current) =>
+      normalizeLaborCount(Math.max(0, normalizeLaborCount(current) + delta))
+    );
+  };
+
+  return (
+    <div style={s.estimateLabel}>
+      <span>人工数</span>
+      {!focused && (
+        <p
+          style={{
+            margin: "8px 0 12px",
+            fontSize: 28,
+            fontWeight: 700,
+            color: "#fff",
+            letterSpacing: "-0.02em",
+          }}
+        >
+          {formatLaborCountDisplay(count)}
+        </p>
+      )}
+      <div style={s.laborStepperRow}>
+        <SafeButton
+          type="button"
+          style={s.laborStepperBtn}
+          aria-label="人工数を0.5減らす"
+          onPress={() => stepBy(-LABOR_COUNT_STEP)}
+        >
+          −
+        </SafeButton>
+        <div style={s.laborStepperValueWrap}>
+          <input
+            style={s.laborStepperInput}
+            type="text"
+            inputMode="decimal"
+            value={focused ? draft : count.toFixed(1)}
+            aria-label="人工数（0.5刻み）"
+            onFocus={() => {
+              setFocused(true);
+              setDraft(count === 0 ? "" : count.toFixed(1));
+            }}
+            onChange={(e) => {
+              setDraft(sanitizeLaborCountDraft(e.target.value));
+            }}
+            onBlur={() => {
+              setFocused(false);
+              applyCount(parseLaborCountDraft(draft));
+            }}
+          />
+          <span style={s.laborStepperSuffix}>人工</span>
+        </div>
+        <SafeButton
+          type="button"
+          style={s.laborStepperBtn}
+          aria-label="人工数を0.5増やす"
+          onPress={() => stepBy(LABOR_COUNT_STEP)}
+        >
+          ＋
+        </SafeButton>
+      </div>
+    </div>
+  );
+}
 
 const OUTSOURCING_MODE_OPTIONS = [
   { value: "labor", label: "常用（人工）", icon: "👷" },
@@ -124,7 +218,10 @@ function getInitialOutsourcingState(initialEstimate, fromClient, company) {
       : fromClient?.standardOutsourcingMode === "sqm"
         ? "sqm"
         : "labor";
-  const laborCount = normalizeLaborCount(initialEstimate?.laborCount ?? 0);
+  const laborCount =
+    outsourcingMode === "sqm"
+      ? 0
+      : normalizeLaborCount(initialEstimate?.laborCount ?? 0);
   const laborUnitPrice = Number(
     initialEstimate?.laborUnitPrice ?? fromClient?.standardLaborUnitPrice ?? standardLaborUnitPrice
   );
@@ -344,6 +441,12 @@ export default function EstimateForm({
   }, [partners, siteMasters, client, workType, transportFeeMethod]);
 
   useEffect(() => {
+    if (outsourcingMode === "sqm") {
+      setLaborCount(0);
+    }
+  }, [outsourcingMode]);
+
+  useEffect(() => {
     const partner = findPartnerByName(partners, client);
     if (!partner) {
       if (!skipPartnerSync.current) {
@@ -482,7 +585,7 @@ export default function EstimateForm({
   if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
-        <button style={s.back} onClick={onBack}>← 戻る</button>
+        <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
         <h1 style={s.estimatePageTitle}>見積作成</h1>
         <p style={s.muted}>取引先が未登録です。</p>
       </main>
@@ -499,7 +602,7 @@ export default function EstimateForm({
 
   return (
     <main style={s.estimatePage}>
-      <button style={s.back} onClick={onBack}>← 戻る</button>
+      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.estimatePageTitle}>
         {isQuickEstimate
           ? "ワンタップ見積"
@@ -607,7 +710,7 @@ export default function EstimateForm({
             )}
             {outsourcingMode === "labor" && (
               <>
-                <LaborCountStepper value={laborCount} setValue={setLaborCount} large />
+                <OutsourcingLaborCountField value={laborCount} onChange={setLaborCount} />
                 {!isQuickEstimate && (
                   <Input
                     large
@@ -688,13 +791,13 @@ export default function EstimateForm({
             </div>
             <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
             <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
-            <button
+            <SafeButton
               type="button"
               style={s.estimateDetailToggleBtn}
-              onClick={() => setShowTransportDetails((open) => !open)}
+              onPress={() => setShowTransportDetails((open) => !open)}
             >
               {showTransportDetails ? "詳細設定を閉じる" : "詳細設定"}
-            </button>
+            </SafeButton>
             {showTransportDetails && (
               <>
                 <Input
@@ -752,14 +855,14 @@ export default function EstimateForm({
                   : "—"}
               </p>
             </div>
-            <button
+            <SafeButton
               type="button"
               style={s.estimateApplyBtn}
               disabled={!profitSimulator.canCalculate}
-              onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+              onPress={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
             >
               販売単価へ反映
-            </button>
+            </SafeButton>
             <Collapsible label="詳細（値引き・目標利益率）">
               <Input large label="値引き 円" value={discount} setValue={setDiscount} type="number" />
               <Input
@@ -786,9 +889,9 @@ export default function EstimateForm({
       <AiCeoComment message={aiMessage} />
 
       <div style={s.estimateActions}>
-        <button style={s.save} type="button" onClick={() => onSave(buildEstimate())}>
+        <SafeButton style={s.save} type="button" onPress={() => onSave(buildEstimate())}>
           見積を保存
-        </button>
+        </SafeButton>
       </div>
 
       <DocumentSendButtons

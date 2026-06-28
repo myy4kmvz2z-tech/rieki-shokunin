@@ -9,6 +9,7 @@ import {
   getGoogleMapsApiStatusMessage,
   promptManualDistanceKm,
 } from "../utils/googleMaps";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function SiteTransportSection({
@@ -87,29 +88,29 @@ export default function SiteTransportSection({
 
   return (
     <div style={s.siteTransportBox}>
-      <button
+      <SafeButton
         type="button"
         style={s.gpsBtn}
-        onClick={handleGetCurrentLocation}
+        onPress={handleGetCurrentLocation}
         disabled={loadingLocation}
       >
         {loadingLocation ? "取得中…" : "現在地取得"}
-      </button>
+      </SafeButton>
 
       <p style={s.gpsMeta}>現在地：{currentLocationLabel || "未取得"}</p>
 
-      <button type="button" style={s.gpsBtnOutline} onClick={handleOpenGoogleMaps}>
+      <SafeButton type="button" style={s.gpsBtnOutline} onPress={handleOpenGoogleMaps}>
         Googleマップを開く
-      </button>
+      </SafeButton>
 
-      <button
+      <SafeButton
         type="button"
         style={s.gpsBtnSecondary}
-        onClick={handleAcquireDistance}
+        onPress={handleAcquireDistance}
         disabled={loadingDistance}
       >
         {loadingDistance ? "取得中…" : "距離取得"}
-      </button>
+      </SafeButton>
 
       <p style={apiStatus ? s.gpsApiNotice : s.gpsApiReady}>
         {apiStatus || "APIキー設定済み（自動距離は将来対応）"}

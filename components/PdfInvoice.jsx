@@ -10,12 +10,13 @@ import {
   yen,
 } from "../utils/calcProfit";
 import { getTransportDetailLabel, getTransportModeLabel } from "../utils/calcTransport";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function PdfInvoice({ estimates, onBack, onPdf }) {
   return (
     <main style={s.page}>
-      <button style={s.back} onClick={onBack}>← 戻る</button>
+      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.title}>請求書の印刷</h1>
       <p style={s.sub}>保存済み見積から A4 請求書を印刷</p>
 
@@ -42,9 +43,12 @@ export default function PdfInvoice({ estimates, onBack, onPdf }) {
               <p>請求 {yen(billingAmount)} / 利益 {yen(display.profit)}</p>
               <p style={s.muted}>{formatProfitRateJudgment(display.rate)} / 目標 {getTargetProfitRate(e)}% / 判定 {judgment.icon} {judgment.label}</p>
               <small style={s.muted}>{e.createdAt}</small>
-              <button style={{ ...s.pdf, width: "100%", marginTop: 12 }} onClick={() => onPdf(e)}>
+              <SafeButton
+                style={{ ...s.pdf, width: "100%", marginTop: 12 }}
+                onPress={() => onPdf(e)}
+              >
                 印刷する
-              </button>
+              </SafeButton>
             </section>
           );
         })

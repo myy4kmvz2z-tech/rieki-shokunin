@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { normalizeLaborCount } from "../utils/calcProfit";
+import { LABOR_COUNT_STEP, normalizeLaborCount } from "../utils/calcProfit";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 function sanitizeLaborCountDraft(raw) {
@@ -28,41 +29,40 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
   };
 
   const step = (delta) => {
-    applyValue(Math.max(0, normalized + delta));
+    setValue((current) =>
+      normalizeLaborCount(
+        Math.max(0, normalizeLaborCount(current) + delta)
+      )
+    );
   };
 
-  const displayValue = focused
-    ? draft
-    : normalized === 0
-      ? "0.0"
-      : normalized.toFixed(1);
+  const displayValue = focused ? draft : normalized.toFixed(1);
 
   return (
     <div style={labelStyle}>
       <span>{label}</span>
       <div style={s.laborStepperRow}>
-        <button
+        <SafeButton
           type="button"
           style={s.laborStepperBtn}
-          aria-label="人工数を0.5減らす"
-          onClick={() => step(-0.5)}
+          aria-label={`人工数を${LABOR_COUNT_STEP}減らす`}
+          onPress={() => step(-LABOR_COUNT_STEP)}
         >
           −
-        </button>
+        </SafeButton>
         <div style={s.laborStepperValueWrap}>
           <input
             style={s.laborStepperInput}
             type="text"
             inputMode="decimal"
             value={displayValue}
+            aria-label={`${label}（0.5刻み）`}
             onFocus={() => {
               setFocused(true);
               setDraft(normalized === 0 ? "" : normalized.toFixed(1));
             }}
             onChange={(e) => {
-              const nextDraft = sanitizeLaborCountDraft(e.target.value);
-              setDraft(nextDraft);
-              applyValue(parseLaborCountDraft(nextDraft));
+              setDraft(sanitizeLaborCountDraft(e.target.value));
             }}
             onBlur={() => {
               setFocused(false);
@@ -71,14 +71,14 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
           />
           <span style={s.laborStepperSuffix}>人工</span>
         </div>
-        <button
+        <SafeButton
           type="button"
           style={s.laborStepperBtn}
-          aria-label="人工数を0.5増やす"
-          onClick={() => step(0.5)}
+          aria-label={`人工数を${LABOR_COUNT_STEP}増やす`}
+          onPress={() => step(LABOR_COUNT_STEP)}
         >
           ＋
-        </button>
+        </SafeButton>
       </div>
     </div>
   );
@@ -162,18 +162,18 @@ export function CardButtonGroup({ label, value, setValue, options }) {
           const optionIcon = typeof option === "string" ? null : option.icon;
           const active = value === optionValue;
           return (
-            <button
+            <SafeButton
               key={optionValue}
               type="button"
               style={{
                 ...s.cardButton,
                 ...(active ? s.cardButtonActive : null),
               }}
-              onClick={() => setValue(optionValue)}
+              onPress={() => setValue(optionValue)}
             >
               {optionIcon && <span style={s.cardButtonIcon}>{optionIcon}</span>}
               <span>{optionLabel}</span>
-            </button>
+            </SafeButton>
           );
         })}
       </div>
@@ -234,11 +234,20 @@ export function Select({ label, value, setValue, options, large = false }) {
 }
 
 export function Collapsible({ label, children }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <details style={s.details}>
-      <summary style={s.detailsSummary}>{label}</summary>
-      <div style={s.detailsBody}>{children}</div>
-    </details>
+    <div style={s.details}>
+      <SafeButton
+        type="button"
+        style={s.detailsSummary}
+        aria-expanded={open}
+        onPress={() => setOpen((value) => !value)}
+      >
+        {label}
+      </SafeButton>
+      {open && <div style={s.detailsBody}>{children}</div>}
+    </div>
   );
 }
 

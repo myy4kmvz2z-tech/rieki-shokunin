@@ -10,6 +10,7 @@ import {
 import { getCostStructureForClient, getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Input, Select } from "./FormFields";
+import SafeButton from "./SafeButton";
 
 const OUTSOURCING_MODE_OPTIONS = [
   { value: "labor", label: "常用（人工）", icon: "👷" },
@@ -176,7 +177,7 @@ export default function SiteMasterManager({ siteMasters, partners, onBack, onSav
   if (partnerOptions.length === 0) {
     return (
       <main style={s.page}>
-        <button style={s.back} onClick={onBack}>← 戻る</button>
+        <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
         <h1 style={s.title}>現場マスター</h1>
         <p style={s.muted}>取引先を先に登録してください。</p>
       </main>
@@ -187,7 +188,7 @@ export default function SiteMasterManager({ siteMasters, partners, onBack, onSav
 
   return (
     <main style={s.page}>
-      <button style={s.back} onClick={onBack}>← 戻る</button>
+      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.title}>現場マスター</h1>
       <p style={s.sub}>取引先 → 工事項目 → 設定。見積では2つ選ぶだけで自動入力されます。</p>
 
@@ -208,9 +209,9 @@ export default function SiteMasterManager({ siteMasters, partners, onBack, onSav
           />
           <SiteMasterSettingsForm form={form} setField={setField} />
         </div>
-        <button style={s.save} type="button" onClick={handleSave}>
+        <SafeButton style={s.save} type="button" onPress={handleSave}>
           {currentMaster ? "設定を更新" : "設定を保存"}
-        </button>
+        </SafeButton>
       </section>
 
       {sortedMasters.length === 0 ? (
@@ -222,12 +223,12 @@ export default function SiteMasterManager({ siteMasters, partners, onBack, onSav
             <p style={s.listMeta}>{master.workType}</p>
             <SiteMasterSummary master={master} />
             <div style={{ ...s.rowActions, marginTop: 16 }}>
-              <button style={s.editBtn} type="button" onClick={() => handleEdit(master)}>
+              <SafeButton style={s.editBtn} type="button" onPress={() => handleEdit(master)}>
                 編集
-              </button>
-              <button style={s.delete} type="button" onClick={() => handleDelete(master)}>
+              </SafeButton>
+              <SafeButton style={s.delete} type="button" onPress={() => handleDelete(master)}>
                 削除
-              </button>
+              </SafeButton>
             </div>
           </section>
         ))

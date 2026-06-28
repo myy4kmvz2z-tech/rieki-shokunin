@@ -5,6 +5,7 @@ import { yen } from "../utils/calcProfit";
 import { getPlanShortLabel } from "../lib/plan";
 import CeoCommentCard from "./CeoCommentCard";
 import QuickEstimatePanel from "./QuickEstimatePanel";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 function SectionDivider() {
@@ -155,24 +156,24 @@ export default function Dashboard({
       <SectionDivider />
 
       <nav style={s.ceoNav}>
-        <button style={s.btnPrimary} type="button" onClick={onNewEstimate}>
+        <SafeButton style={s.btnPrimary} type="button" onPress={onNewEstimate}>
           ＋ 見積作成
-        </button>
-        <button style={s.btn} type="button" onClick={onSiteMasters}>
+        </SafeButton>
+        <SafeButton style={s.btn} type="button" onPress={onSiteMasters}>
           現場マスター
-        </button>
-        <button style={s.btn} type="button" onClick={onList}>
+        </SafeButton>
+        <SafeButton style={s.btn} type="button" onPress={onList}>
           保存済み見積
-        </button>
-        <button style={s.btn} type="button" onClick={onPartners}>
+        </SafeButton>
+        <SafeButton style={s.btn} type="button" onPress={onPartners}>
           取引先管理
-        </button>
-        <button style={s.btn} type="button" onClick={onSettings}>
+        </SafeButton>
+        <SafeButton style={s.btn} type="button" onPress={onSettings}>
           会社設定
-        </button>
-        <button style={s.btn} type="button" onClick={onPricing}>
+        </SafeButton>
+        <SafeButton style={s.btn} type="button" onPress={onPricing}>
           料金プラン
-        </button>
+        </SafeButton>
       </nav>
     </>
   );

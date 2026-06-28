@@ -8,6 +8,7 @@ import {
 import PaymentControls from "./PaymentControls";
 import PaymentStatusBadge from "./PaymentStatusBadge";
 import DocumentSendButtons from "./DocumentSendButtons";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
@@ -27,7 +28,7 @@ export default function EstimateList({
 }) {
   return (
     <main style={s.page}>
-      <button style={s.back} onClick={onBack}>← 戻る</button>
+      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
       <h1 style={s.title}>保存済み見積</h1>
       <p style={s.sub}>見積中 → 送付済 → 請求済 → 入金待ち → 入金済</p>
 
@@ -84,12 +85,12 @@ export default function EstimateList({
               />
 
               <div style={s.rowActions}>
-                <button style={s.copyBtn} onClick={() => onCopy(e.id)}>
+                <SafeButton style={s.copyBtn} onPress={() => onCopy(e.id)}>
                   📋 コピー
-                </button>
-                <button style={s.editBtn} onClick={() => onEdit(e.id)}>
+                </SafeButton>
+                <SafeButton style={s.editBtn} onPress={() => onEdit(e.id)}>
                   編集
-                </button>
+                </SafeButton>
               </div>
             </section>
           );

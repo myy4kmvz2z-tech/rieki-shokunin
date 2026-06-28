@@ -8,6 +8,7 @@ import {
 } from "../lib/documentEngine";
 import { canSharePdfFiles, getAvailableSendMethods } from "../utils/pdfExport";
 import { executeSendMethod } from "../utils/sendCenter";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function DocumentSendButtons({
@@ -80,15 +81,15 @@ export default function DocumentSendButtons({
           const buttonStyle = docType === "invoice" ? s.pdfInvoiceBtn : s.pdfEstimateBtn;
 
           return (
-            <button
+            <SafeButton
               key={docType}
               type="button"
               style={{ ...buttonStyle, opacity: disabled ? 0.5 : 1 }}
               disabled={disabled}
-              onClick={() => openMenu(docType)}
+              onPress={() => openMenu(docType)}
             >
               {busy && openDocType === docType ? "処理中…" : `📤 ${definition.sendLabel}`}
-            </button>
+            </SafeButton>
           );
         })}
       </div>
@@ -99,25 +100,25 @@ export default function DocumentSendButtons({
           <p style={s.sendSheetTitle}>{menuTitle}</p>
           <div style={s.sendMethodActions}>
             {sendMethods.map((item) => (
-              <button
+              <SafeButton
                 key={item.id}
                 type="button"
                 style={item.id === "share" ? s.pdfShareBtn : s.sendMethodActionBtn}
                 disabled={busy}
-                onClick={() => handleAction(item.id)}
+                onPress={() => handleAction(item.id)}
               >
                 {item.label}
-              </button>
+              </SafeButton>
             ))}
           </div>
-          <button
+          <SafeButton
             type="button"
             style={s.secondary}
             disabled={busy}
-            onClick={() => setOpenDocType(null)}
+            onPress={() => setOpenDocType(null)}
           >
             閉じる
-          </button>
+          </SafeButton>
           <div style={s.sendSheetDivider} />
         </div>
       )}

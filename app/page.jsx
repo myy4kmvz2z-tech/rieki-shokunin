@@ -20,6 +20,7 @@ import {
   PAYMENT_PAID,
   withPaymentStatus,
 } from "../lib/payment";
+import SafeButton from "../components/SafeButton";
 import { s } from "../lib/styles";
 import SiteMasterManager from "../components/SiteMasterManager";
 import { useSiteMasters } from "../hooks/useSiteMasters";
@@ -58,7 +59,15 @@ export default function Page() {
 
   useEffect(() => {
     if (!printDoc || !shouldPrint) return;
+
     requestAnimationFrame(() => window.print());
+
+    const fallbackTimer = window.setTimeout(() => {
+      setPrintDoc(null);
+      setShouldPrint(false);
+    }, 4000);
+
+    return () => window.clearTimeout(fallbackTimer);
   }, [printDoc, shouldPrint]);
 
   const handlePdfOutput = (estimate) => {
@@ -167,15 +176,15 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <button
+        <SafeButton
           style={s.back}
-          onClick={() => {
+          onPress={() => {
             setEditingId(null);
             setScreen("list");
           }}
         >
           ← 戻る
-        </button>
+        </SafeButton>
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
@@ -208,15 +217,15 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <button
+        <SafeButton
           style={s.back}
-          onClick={() => {
+          onPress={() => {
             setCopySourceId(null);
             setScreen("list");
           }}
         >
           ← 戻る
-        </button>
+        </SafeButton>
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
@@ -251,15 +260,15 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <button
+        <SafeButton
           style={s.back}
-          onClick={() => {
+          onPress={() => {
             setQuickEstimateTarget(null);
             setScreen("home");
           }}
         >
           ← 戻る
-        </button>
+        </SafeButton>
         <p style={s.muted}>現場マスターが見つかりませんでした。</p>
       </main>
     );
@@ -362,7 +371,7 @@ export default function Page() {
 
   return (
     <>
-      <div className="no-print">{content}</div>
+      <div className="app-shell no-print">{content}</div>
       <ConfirmModal
         open={showEstimateLimitModal}
         message={getEstimateLimitMessage(plan)}
@@ -379,13 +388,15 @@ export default function Page() {
         onConfirm={() => setShowPdfUpgradeModal(false)}
         onCancel={() => setShowPdfUpgradeModal(false)}
       />
-      {printDoc && (
-        <div className="paper">
-          {printDoc.type === "invoice" ? (
-            <InvoicePaper estimate={printDoc.estimate} company={company} />
-          ) : (
-            <EstimatePaper estimate={printDoc.estimate} company={company} />
-          )}
+      {printDoc && shouldPrint && (
+        <div className="print-only" aria-hidden="true">
+          <div className="paper">
+            {printDoc.type === "invoice" ? (
+              <InvoicePaper estimate={printDoc.estimate} company={company} />
+            ) : (
+              <EstimatePaper estimate={printDoc.estimate} company={company} />
+            )}
+          </div>
         </div>
       )}
     </>

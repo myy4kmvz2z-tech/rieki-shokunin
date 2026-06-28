@@ -1,5 +1,6 @@
 "use client";
 
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function ConfirmModal({
@@ -14,18 +15,18 @@ export default function ConfirmModal({
   if (!open) return null;
 
   return (
-    <div style={s.modalOverlay} role="dialog" aria-modal="true">
-      <div style={s.modalCard}>
+    <div className="modal-backdrop" style={s.modalOverlay} role="dialog" aria-modal="true">
+      <div className="modal-card" style={s.modalCard}>
         <p style={s.modalMessage}>{message}</p>
         <div style={alertOnly ? { display: "grid" } : s.modalActions}>
           {!alertOnly && (
-            <button type="button" style={s.secondary} onClick={onCancel}>
+            <SafeButton type="button" style={s.secondary} onPress={onCancel}>
               {cancelLabel}
-            </button>
+            </SafeButton>
           )}
-          <button type="button" style={s.save} onClick={onConfirm}>
+          <SafeButton type="button" style={s.save} onPress={onConfirm}>
             {confirmLabel}
-          </button>
+          </SafeButton>
         </div>
       </div>
     </div>

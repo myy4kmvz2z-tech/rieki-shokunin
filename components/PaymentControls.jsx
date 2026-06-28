@@ -7,6 +7,7 @@ import {
   normalizePaymentStatus,
   PAYMENT_FLOW,
 } from "../lib/payment";
+import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function PaymentControls({
@@ -43,18 +44,18 @@ export default function PaymentControls({
       </div>
       <div style={s.paymentActions}>
         {!paid && nextLabel && (
-          <button type="button" style={s.paymentAdvanceBtn} onClick={onAdvance}>
+          <SafeButton type="button" style={s.paymentAdvanceBtn} onPress={onAdvance}>
             → {nextLabel}
-          </button>
+          </SafeButton>
         )}
-        <button
+        <SafeButton
           type="button"
           style={paid ? s.paymentPaidDone : s.paymentPaidBtn}
-          onClick={onMarkPaid}
+          onPress={onMarkPaid}
           disabled={paid}
         >
           {paid ? "☑ 入金済" : "□ 入金済"}
-        </button>
+        </SafeButton>
       </div>
       <p style={s.paymentCurrent}>現在：{getPaymentStatusLabel(current)}</p>
     </div>

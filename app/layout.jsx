@@ -7,13 +7,20 @@ export const metadata = {
 };
 
 export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
   themeColor: "#111111",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        <div id="__next" className="app-root">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }
