@@ -245,8 +245,6 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
           style={s.btnPrimary}
           onClick={() => {
             alert("取引先追加");
-            const newPartner = createEmptyPartner();
-            setEditingPartner(newPartner);
             setIsEditing(true);
           }}
         >
