@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import PartnerManager from "../components/PartnerManager";
 import CompanySettings from "../components/CompanySettings";
 import ConfirmModal from "../components/ConfirmModal";
@@ -31,8 +31,27 @@ import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
 import { usePdfExport } from "../hooks/usePdfExport";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
+function readScreenFromUrl() {
+  if (typeof window === "undefined") return "home";
+  const params = new URLSearchParams(window.location.search);
+  return params.get("screen") || "home";
+}
+
+function writeScreenToUrl(nextScreen) {
+  if (typeof window === "undefined") return;
+  const url = new URL(window.location.href);
+  if (!nextScreen || nextScreen === "home") {
+    url.searchParams.delete("screen");
+  } else {
+    url.searchParams.set("screen", nextScreen);
+  }
+  const search = url.searchParams.toString();
+  window.history.replaceState(null, "", search ? `${url.pathname}?${search}` : url.pathname);
+}
+
 export default function Page() {
-  const [screen, setScreen] = useState("home");
+  const [screen, setScreenState] = useState("home");
+  const [debugText] = useState("IPHONE FIX 3000");
   const { estimates, saveAll } = useEstimates();
   const { partners, savePartners } = usePartners();
   const { company, saveCompany } = useCompany();
@@ -47,6 +66,15 @@ export default function Page() {
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
   const pdfExport = usePdfExport(company);
+
+  const setScreen = useCallback((next) => {
+    setScreenState(next);
+    writeScreenToUrl(next);
+  }, []);
+
+  useEffect(() => {
+    setScreenState(readScreenFromUrl());
+  }, []);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -358,12 +386,6 @@ export default function Page() {
           siteMasters={siteMasters}
           quickEstimateUsage={quickEstimateUsage}
           onQuickEstimate={handleQuickEstimate}
-          onNewEstimate={() => setScreen("new")}
-          onSiteMasters={() => setScreen("siteMasters")}
-          onList={() => setScreen("list")}
-          onPartners={() => setScreen("partners")}
-          onSettings={() => setScreen("settings")}
-          onPricing={() => setScreen("pricing")}
         />
       </main>
     );
@@ -371,7 +393,12 @@ export default function Page() {
 
   return (
     <>
-      <div className="app-shell no-print">{content}</div>
+      <div className="app-shell no-print">
+        <p style={{ color: "red", margin: 0, fontWeight: 900, fontSize: 18, padding: "8px 14px 0" }}>
+          {debugText}
+        </p>
+        {content}
+      </div>
       <ConfirmModal
         open={showEstimateLimitModal}
         message={getEstimateLimitMessage(plan)}

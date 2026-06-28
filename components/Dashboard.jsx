@@ -5,8 +5,14 @@ import { yen } from "../utils/calcProfit";
 import { getPlanShortLabel } from "../lib/plan";
 import CeoCommentCard from "./CeoCommentCard";
 import QuickEstimatePanel from "./QuickEstimatePanel";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
+
+const navLinkStyle = (baseStyle) => ({
+  ...baseStyle,
+  textDecoration: "none",
+  display: "block",
+  boxSizing: "border-box",
+});
 
 function SectionDivider() {
   return <hr style={s.homeDivider} />;
@@ -35,12 +41,6 @@ export default function Dashboard({
   siteMasters,
   quickEstimateUsage,
   onQuickEstimate,
-  onNewEstimate,
-  onSiteMasters,
-  onList,
-  onPartners,
-  onSettings,
-  onPricing,
 }) {
   const dashboard = buildCeoDashboard(estimates, {
     monthlyTargetProfit: company?.monthlyTargetProfit,
@@ -156,24 +156,24 @@ export default function Dashboard({
       <SectionDivider />
 
       <nav style={s.ceoNav}>
-        <SafeButton style={s.btnPrimary} type="button" onPress={onNewEstimate}>
+        <a href="/?screen=new" style={navLinkStyle(s.btnPrimary)}>
           ＋ 見積作成
-        </SafeButton>
-        <SafeButton style={s.btn} type="button" onPress={onSiteMasters}>
+        </a>
+        <a href="/?screen=siteMasters" style={navLinkStyle(s.btn)}>
           現場マスター
-        </SafeButton>
-        <SafeButton style={s.btn} type="button" onPress={onList}>
+        </a>
+        <a href="/?screen=list" style={navLinkStyle(s.btn)}>
           保存済み見積
-        </SafeButton>
-        <SafeButton style={s.btn} type="button" onPress={onPartners}>
+        </a>
+        <a href="/?screen=partners" style={navLinkStyle(s.btn)}>
           取引先管理
-        </SafeButton>
-        <SafeButton style={s.btn} type="button" onPress={onSettings}>
+        </a>
+        <a href="/?screen=settings" style={navLinkStyle(s.btn)}>
           会社設定
-        </SafeButton>
-        <SafeButton style={s.btn} type="button" onPress={onPricing}>
+        </a>
+        <a href="/?screen=pricing" style={navLinkStyle(s.btn)}>
           料金プラン
-        </SafeButton>
+        </a>
       </nav>
     </>
   );
