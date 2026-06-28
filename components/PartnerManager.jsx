@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   COST_UNIT_FIELDS,
   OUTSOURCING_MODES,
@@ -160,8 +159,6 @@ function validatePartnerForm(form) {
 }
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
-  const router = useRouter();
-  const onBack = () => router.push("/dashboard");
   const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -232,8 +229,29 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
   };
 
   return (
-    <main style={s.page}>
-      <button type="button" style={s.back} onClick={onBack}>
+    <main
+      style={{
+        ...s.page,
+        position: "relative",
+        zIndex: 9999,
+        pointerEvents: "auto",
+        touchAction: "manipulation",
+      }}
+    >
+      <button
+        type="button"
+        style={{
+          ...s.back,
+          position: "relative",
+          zIndex: 10000,
+          pointerEvents: "auto",
+          touchAction: "manipulation",
+        }}
+        onClick={() => {
+          alert("戻る");
+          window.location.href = "/dashboard";
+        }}
+      >
         ← 戻る
       </button>
       <h1 style={s.title}>取引先管理</h1>
@@ -247,7 +265,13 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
       {!showAddForm ? (
         <button
           type="button"
-          style={s.btnPrimary}
+          style={{
+            ...s.btnPrimary,
+            position: "relative",
+            zIndex: 10000,
+            pointerEvents: "auto",
+            touchAction: "manipulation",
+          }}
           onClick={() => {
             alert("取引先追加");
             setShowAddForm(true);
