@@ -8,7 +8,6 @@ import {
 } from "../lib/documentEngine";
 import { canSharePdfFiles, getAvailableSendMethods } from "../utils/pdfExport";
 import { executeSendMethod } from "../utils/sendCenter";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function DocumentSendButtons({
@@ -81,16 +80,15 @@ export default function DocumentSendButtons({
           const buttonStyle = docType === "invoice" ? s.pdfInvoiceBtn : s.pdfEstimateBtn;
 
           return (
-            <SafeButton
+            <button
               key={docType}
               type="button"
               style={{ ...buttonStyle, opacity: disabled ? 0.5 : 1 }}
               disabled={disabled}
-              tapLabel="送る"
-              onPress={() => openMenu(docType)}
+              onClick={() => openMenu(docType)}
             >
               {busy && openDocType === docType ? "処理中…" : `📤 ${definition.sendLabel}`}
-            </SafeButton>
+            </button>
           );
         })}
       </div>
@@ -101,25 +99,25 @@ export default function DocumentSendButtons({
           <p style={s.sendSheetTitle}>{menuTitle}</p>
           <div style={s.sendMethodActions}>
             {sendMethods.map((item) => (
-              <SafeButton
+              <button
                 key={item.id}
                 type="button"
                 style={item.id === "share" ? s.pdfShareBtn : s.sendMethodActionBtn}
                 disabled={busy}
-                onPress={() => handleAction(item.id)}
+                onClick={() => handleAction(item.id)}
               >
                 {item.label}
-              </SafeButton>
+              </button>
             ))}
           </div>
-          <SafeButton
+          <button
             type="button"
             style={s.secondary}
             disabled={busy}
-            onPress={() => setOpenDocType(null)}
+            onClick={() => setOpenDocType(null)}
           >
             閉じる
-          </SafeButton>
+          </button>
           <div style={s.sendSheetDivider} />
         </div>
       )}

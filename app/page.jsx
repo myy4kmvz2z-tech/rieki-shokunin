@@ -20,7 +20,6 @@ import {
   PAYMENT_PAID,
   withPaymentStatus,
 } from "../lib/payment";
-import SafeButton from "../components/SafeButton";
 import { s } from "../lib/styles";
 import SiteMasterManager from "../components/SiteMasterManager";
 import { useSiteMasters } from "../hooks/useSiteMasters";
@@ -176,17 +175,16 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <SafeButton
-          style={s.back}
+        <button
           type="button"
-          tapLabel="戻る"
-          onPress={() => {
+          style={s.back}
+          onClick={() => {
             setEditingId(null);
             setScreen("list");
           }}
         >
           ← 戻る
-        </SafeButton>
+        </button>
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
@@ -219,17 +217,16 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <SafeButton
-          style={s.back}
+        <button
           type="button"
-          tapLabel="戻る"
-          onPress={() => {
+          style={s.back}
+          onClick={() => {
             setCopySourceId(null);
             setScreen("list");
           }}
         >
           ← 戻る
-        </SafeButton>
+        </button>
         <p style={s.muted}>見積が見つかりませんでした。</p>
       </main>
     );
@@ -264,17 +261,16 @@ export default function Page() {
       />
     ) : (
       <main style={s.page}>
-        <SafeButton
-          style={s.back}
+        <button
           type="button"
-          tapLabel="戻る"
-          onPress={() => {
+          style={s.back}
+          onClick={() => {
             setQuickEstimateTarget(null);
             setScreen("home");
           }}
         >
           ← 戻る
-        </SafeButton>
+        </button>
         <p style={s.muted}>現場マスターが見つかりませんでした。</p>
       </main>
     );

@@ -21,7 +21,6 @@ import {
 import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
 import ConfirmModal from "./ConfirmModal";
-import SafeButton from "./SafeButton";
 import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
@@ -227,9 +226,9 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>
+      <button type="button" style={s.back} onClick={onBack}>
         ← 戻る
-      </SafeButton>
+      </button>
       <h1 style={s.title}>取引先管理</h1>
       <p style={s.muted}>
         会社情報・請求情報・単価情報をまとめて管理します。見積・請求・送信で利用されます。
@@ -238,14 +237,13 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
       <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
 
       {!showAddForm ? (
-        <SafeButton
-          style={s.btnPrimary}
+        <button
           type="button"
-          tapLabel="取引先追加"
-          onPress={() => setShowAddForm(true)}
+          style={s.btnPrimary}
+          onClick={() => setShowAddForm(true)}
         >
           ＋ 取引先を追加
-        </SafeButton>
+        </button>
       ) : (
         <section style={s.listCard}>
           <h2 style={s.sectionTitle}>新規取引先</h2>
@@ -253,12 +251,12 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
             <PartnerSettingsForm form={form} setField={setFormField} />
           </div>
             <div style={s.rowActions}>
-              <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleAdd}>
+              <button type="button" style={s.save} onClick={handleAdd}>
                 追加
-              </SafeButton>
-              <SafeButton style={s.secondary} type="button" onPress={() => setShowAddForm(false)}>
+              </button>
+              <button type="button" style={s.secondary} onClick={() => setShowAddForm(false)}>
                 キャンセル
-              </SafeButton>
+              </button>
             </div>
         </section>
       )}
@@ -275,12 +273,12 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
                   <PartnerSettingsForm form={editForm} setField={setEditField} />
                 </div>
                 <div style={s.rowActions}>
-                  <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleUpdate}>
+                  <button type="button" style={s.save} onClick={handleUpdate}>
                     保存
-                  </SafeButton>
-                  <SafeButton style={s.secondary} type="button" onPress={cancelEdit}>
+                  </button>
+                  <button type="button" style={s.secondary} onClick={cancelEdit}>
                     キャンセル
-                  </SafeButton>
+                  </button>
                 </div>
               </>
             ) : (
@@ -288,22 +286,20 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
                 <h2 style={{ ...s.sectionTitle, marginBottom: 16 }}>{partner.name}</h2>
                 <PartnerFieldList partner={partner} />
                 <div style={{ ...s.rowActions, marginTop: 16 }}>
-                  <SafeButton
-                    style={s.editBtn}
+                  <button
                     type="button"
-                    tapLabel="編集"
-                    onPress={() => startEdit(partner)}
+                    style={s.editBtn}
+                    onClick={() => startEdit(partner)}
                   >
                     編集
-                  </SafeButton>
-                  <SafeButton
-                    style={s.delete}
+                  </button>
+                  <button
                     type="button"
-                    tapLabel="削除"
-                    onPress={() => setDeleteTarget(partner)}
+                    style={s.delete}
+                    onClick={() => setDeleteTarget(partner)}
                   >
                     削除
-                  </SafeButton>
+                  </button>
                 </div>
               </>
             )}

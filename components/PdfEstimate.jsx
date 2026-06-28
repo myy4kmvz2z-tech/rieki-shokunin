@@ -9,13 +9,12 @@ import {
   yen,
 } from "../utils/calcProfit";
 import { getTransportDetailLabel, getTransportModeLabel } from "../utils/calcTransport";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function PdfEstimate({ estimates, onBack, onPdf }) {
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>見積書の印刷</h1>
       <p style={s.sub}>保存済み見積から A4 見積書を印刷</p>
 
@@ -47,12 +46,13 @@ export default function PdfEstimate({ estimates, onBack, onPdf }) {
               </p>
               <p style={s.muted}>判定 {judgment.icon} {judgment.label}</p>
               <small style={s.muted}>{e.createdAt}</small>
-              <SafeButton
+              <button
+                type="button"
                 style={{ ...s.pdf, width: "100%", marginTop: 12 }}
-                onPress={() => onPdf(e)}
+                onClick={() => onPdf(e)}
               >
                 印刷する
-              </SafeButton>
+              </button>
             </section>
           );
         })

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { LABOR_COUNT_STEP, normalizeLaborCount } from "../utils/calcProfit";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 function sanitizeLaborCountDraft(raw) {
@@ -42,15 +41,14 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
     <div style={labelStyle}>
       <span>{label}</span>
       <div style={s.laborStepperRow}>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label={`人工数を${LABOR_COUNT_STEP}減らす`}
-          tapLabel="人工数-"
-          onPress={() => step(-LABOR_COUNT_STEP)}
+          onClick={() => step(-LABOR_COUNT_STEP)}
         >
           −
-        </SafeButton>
+        </button>
         <div style={s.laborStepperValueWrap}>
           <input
             style={s.laborStepperInput}
@@ -72,15 +70,14 @@ export function LaborCountStepper({ label = "人工数", value, setValue, large 
           />
           <span style={s.laborStepperSuffix}>人工</span>
         </div>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label={`人工数を${LABOR_COUNT_STEP}増やす`}
-          tapLabel="人工数+"
-          onPress={() => step(LABOR_COUNT_STEP)}
+          onClick={() => step(LABOR_COUNT_STEP)}
         >
           ＋
-        </SafeButton>
+        </button>
       </div>
     </div>
   );
@@ -164,18 +161,18 @@ export function CardButtonGroup({ label, value, setValue, options }) {
           const optionIcon = typeof option === "string" ? null : option.icon;
           const active = value === optionValue;
           return (
-            <SafeButton
+            <button
               key={optionValue}
               type="button"
               style={{
                 ...s.cardButton,
                 ...(active ? s.cardButtonActive : null),
               }}
-              onPress={() => setValue(optionValue)}
+              onClick={() => setValue(optionValue)}
             >
               {optionIcon && <span style={s.cardButtonIcon}>{optionIcon}</span>}
               <span>{optionLabel}</span>
-            </SafeButton>
+            </button>
           );
         })}
       </div>
@@ -240,14 +237,14 @@ export function Collapsible({ label, children }) {
 
   return (
     <div style={s.details}>
-      <SafeButton
+      <button
         type="button"
         style={s.detailsSummary}
         aria-expanded={open}
-        onPress={() => setOpen((value) => !value)}
+        onClick={() => setOpen((value) => !value)}
       >
         {label}
-      </SafeButton>
+      </button>
       {open && <div style={s.detailsBody}>{children}</div>}
     </div>
   );

@@ -6,7 +6,6 @@ import {
   normalizePlan,
   PLAN_CATALOG,
 } from "../lib/plan";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 function PricingCard({ item, isCurrent, onSelect, onContact }) {
@@ -46,7 +45,7 @@ function PricingCard({ item, isCurrent, onSelect, onContact }) {
         ))}
       </ul>
 
-      <SafeButton
+      <button
         type="button"
         style={
           isCurrent
@@ -57,11 +56,11 @@ function PricingCard({ item, isCurrent, onSelect, onContact }) {
                 ? s.pricingBtnOutline
                 : s.pricingBtnSecondary
         }
-        onPress={handleClick}
+        onClick={handleClick}
         disabled={isCurrent && !isCorporate}
       >
         {isCurrent && !isCorporate ? "利用中" : item.cta}
-      </SafeButton>
+      </button>
     </article>
   );
 }
@@ -76,7 +75,7 @@ export default function PricingPlan({ partners, estimates, plan, onSetPlan, onBa
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
       <p style={s.pricingKicker}>料金プラン</p>
       <h1 style={{ ...s.title, marginBottom: 8 }}>{getPlanLabel(plan)}</h1>
       <p style={{ ...s.muted, marginBottom: 24, fontSize: 15 }}>

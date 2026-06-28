@@ -32,7 +32,6 @@ import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
 import DocumentSendButtons from "./DocumentSendButtons";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, Select } from "./FormFields";
 
@@ -87,15 +86,14 @@ function OutsourcingLaborCountField({ value, onChange }) {
         </p>
       )}
       <div style={s.laborStepperRow}>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5減らす"
-          tapLabel="人工数-"
-          onPress={() => stepBy(-LABOR_COUNT_STEP)}
+          onClick={() => stepBy(-LABOR_COUNT_STEP)}
         >
           −
-        </SafeButton>
+        </button>
         <div style={s.laborStepperValueWrap}>
           <input
             style={s.laborStepperInput}
@@ -117,15 +115,14 @@ function OutsourcingLaborCountField({ value, onChange }) {
           />
           <span style={s.laborStepperSuffix}>人工</span>
         </div>
-        <SafeButton
+        <button
           type="button"
           style={s.laborStepperBtn}
           aria-label="人工数を0.5増やす"
-          tapLabel="人工数+"
-          onPress={() => stepBy(LABOR_COUNT_STEP)}
+          onClick={() => stepBy(LABOR_COUNT_STEP)}
         >
           ＋
-        </SafeButton>
+        </button>
       </div>
     </div>
   );
@@ -587,7 +584,7 @@ export default function EstimateForm({
   if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
-        <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
+        <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
         <h1 style={s.estimatePageTitle}>見積作成</h1>
         <p style={s.muted}>取引先が未登録です。</p>
       </main>
@@ -604,7 +601,7 @@ export default function EstimateForm({
 
   return (
     <main style={s.estimatePage}>
-      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
+      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.estimatePageTitle}>
         {isQuickEstimate
           ? "ワンタップ見積"
@@ -793,13 +790,13 @@ export default function EstimateForm({
             </div>
             <Input large label="高速代 円" value={highwayToll} setValue={setHighwayToll} type="number" />
             <Input large label="駐車場代 円" value={parkingFee} setValue={setParkingFee} type="number" />
-            <SafeButton
+            <button
               type="button"
               style={s.estimateDetailToggleBtn}
-              onPress={() => setShowTransportDetails((open) => !open)}
+              onClick={() => setShowTransportDetails((open) => !open)}
             >
               {showTransportDetails ? "詳細設定を閉じる" : "詳細設定"}
-            </SafeButton>
+            </button>
             {showTransportDetails && (
               <>
                 <Input
@@ -857,14 +854,14 @@ export default function EstimateForm({
                   : "—"}
               </p>
             </div>
-            <SafeButton
+            <button
               type="button"
               style={s.estimateApplyBtn}
               disabled={!profitSimulator.canCalculate}
-              onPress={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
+              onClick={() => setSellingUnitPrice(profitSimulator.recommendedUnitPrice)}
             >
               販売単価へ反映
-            </SafeButton>
+            </button>
             <Collapsible label="詳細（値引き・目標利益率）">
               <Input large label="値引き 円" value={discount} setValue={setDiscount} type="number" />
               <Input
@@ -891,14 +888,13 @@ export default function EstimateForm({
       <AiCeoComment message={aiMessage} />
 
       <div style={s.estimateActions}>
-        <SafeButton
-          style={s.save}
+        <button
           type="button"
-          tapLabel="保存"
-          onPress={() => onSave(buildEstimate())}
+          style={s.save}
+          onClick={() => onSave(buildEstimate())}
         >
           見積を保存
-        </SafeButton>
+        </button>
       </div>
 
       <DocumentSendButtons

@@ -5,7 +5,6 @@ import { DEFAULT_COMPANY, DEFAULT_LABOR_UNIT_PRICE } from "../lib/constants";
 import { TRIP_TYPES } from "../utils/calcTransport";
 import { s } from "../lib/styles";
 import { Input, RadioGroup } from "./FormFields";
-import SafeButton from "./SafeButton";
 
 export default function CompanySettings({ company, onBack, onSave }) {
   const [form, setForm] = useState({
@@ -53,7 +52,7 @@ export default function CompanySettings({ company, onBack, onSave }) {
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} type="button" tapLabel="戻る" onPress={onBack}>← 戻る</SafeButton>
+      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.title}>会社設定</h1>
 
       <section style={s.listCard}>
@@ -131,7 +130,7 @@ export default function CompanySettings({ company, onBack, onSave }) {
         </div>
       </section>
 
-      <SafeButton style={s.save} type="button" tapLabel="保存" onPress={handleSave}>保存する</SafeButton>
+      <button type="button" style={s.save} onClick={handleSave}>保存する</button>
     </main>
   );
 }
