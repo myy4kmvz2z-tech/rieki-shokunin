@@ -161,7 +161,7 @@ function validatePartnerForm(form) {
 
 export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
   const [editingPartner, setEditingPartner] = useState(createEmptyPartner);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [showLimitModal, setShowLimitModal] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -171,7 +171,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
   };
 
   const closeAddForm = () => {
-    setIsEditing(false);
+    setShowAddForm(false);
     setEditingPartner(createEmptyPartner());
   };
 
@@ -193,7 +193,7 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
   };
 
   const startEdit = (partner) => {
-    setIsEditing(false);
+    setShowAddForm(false);
     setEditingId(partner.id);
     setEditingPartner(normalizePartner({ ...partner }));
   };
@@ -239,13 +239,13 @@ export default function PartnerManager({ partners, plan, onSave, estimateCount =
 
       <UsageCard plan={plan} clientCount={partners.length} estimateCount={estimateCount} compact />
 
-      {!isEditing ? (
+      {!showAddForm ? (
         <button
           type="button"
           style={s.btnPrimary}
           onClick={() => {
             alert("取引先追加");
-            setIsEditing(true);
+            setShowAddForm(true);
           }}
         >
           ＋ 取引先を追加
