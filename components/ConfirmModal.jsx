@@ -1,6 +1,5 @@
 "use client";
 
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
 export default function ConfirmModal({
@@ -20,13 +19,13 @@ export default function ConfirmModal({
         <p style={s.modalMessage}>{message}</p>
         <div style={alertOnly ? { display: "grid" } : s.modalActions}>
           {!alertOnly && (
-            <SafeButton type="button" style={s.secondary} onPress={onCancel}>
+            <button type="button" style={s.secondary} onClick={onCancel}>
               {cancelLabel}
-            </SafeButton>
+            </button>
           )}
-          <SafeButton type="button" style={s.save} onPress={onConfirm}>
+          <button type="button" style={s.save} onClick={onConfirm}>
             {confirmLabel}
-          </SafeButton>
+          </button>
         </div>
       </div>
     </div>

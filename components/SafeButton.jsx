@@ -1,7 +1,5 @@
 "use client";
 
-import { useTapHandler } from "../hooks/useTapHandler";
-
 export default function SafeButton({
   onPress,
   onClick,
@@ -10,18 +8,16 @@ export default function SafeButton({
   children,
   ...props
 }) {
-  const action = onPress ?? onClick;
-  const { ref, onClick: handleClick, onPointerUp } = useTapHandler(action, disabled);
+  const handleClick = (event) => {
+    if (disabled) return;
+    const action = onPress ?? onClick;
+    if (typeof action === "function") {
+      action(event);
+    }
+  };
 
   return (
-    <button
-      ref={ref}
-      type={type}
-      disabled={disabled}
-      {...props}
-      onClick={handleClick}
-      onPointerUp={onPointerUp}
-    >
+    <button type={type} disabled={disabled} {...props} onClick={handleClick}>
       {children}
     </button>
   );

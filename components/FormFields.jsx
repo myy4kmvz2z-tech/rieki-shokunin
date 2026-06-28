@@ -109,7 +109,9 @@ export function Input({ label, value, setValue, type = "text", large = false }) 
         <input
           style={inputStyle}
           type={type}
-          value={value}
+          value={value ?? ""}
+          autoComplete="off"
+          autoCorrect="off"
           onChange={(e) => setValue(e.target.value)}
         />
       </label>
