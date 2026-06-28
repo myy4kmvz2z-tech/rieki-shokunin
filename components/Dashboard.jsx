@@ -34,7 +34,8 @@ export default function Dashboard({
   siteMasters,
   quickEstimateUsage,
   onQuickEstimate,
-  onNewEstimate,
+  setDebugText,
+  setScreen,
   onSiteMasters,
   onList,
   onPartners,
@@ -155,7 +156,14 @@ export default function Dashboard({
       <SectionDivider />
 
       <nav style={s.ceoNav}>
-        <button type="button" style={s.btnPrimary} onClick={onNewEstimate}>
+        <button
+          type="button"
+          style={s.btnPrimary}
+          onClick={() => {
+            setDebugText("IPHONE CLICKED");
+            setScreen("new");
+          }}
+        >
           ＋ 見積作成
         </button>
         <button type="button" style={s.btn} onClick={onSiteMasters}>

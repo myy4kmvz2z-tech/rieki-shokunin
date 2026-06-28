@@ -45,6 +45,7 @@ export default function Page() {
   const [quickEstimateTarget, setQuickEstimateTarget] = useState(null);
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
+  const [debugText, setDebugText] = useState("IPHONE FIX 3000");
   const pdfExport = usePdfExport(company);
 
   useEffect(() => {
@@ -360,7 +361,8 @@ export default function Page() {
           siteMasters={siteMasters}
           quickEstimateUsage={quickEstimateUsage}
           onQuickEstimate={handleQuickEstimate}
-          onNewEstimate={() => setScreen("new")}
+          setDebugText={setDebugText}
+          setScreen={setScreen}
           onSiteMasters={() => setScreen("siteMasters")}
           onList={() => setScreen("list")}
           onPartners={() => setScreen("partners")}
@@ -373,7 +375,12 @@ export default function Page() {
 
   return (
     <>
-      <div className="app-shell no-print">{content}</div>
+      <div className="app-shell no-print">
+        <p style={{ color: "red", margin: 0, fontWeight: 900, fontSize: 18, padding: "8px 14px 0" }}>
+          {debugText}
+        </p>
+        {content}
+      </div>
       <ConfirmModal
         open={showEstimateLimitModal}
         message={getEstimateLimitMessage(plan)}
