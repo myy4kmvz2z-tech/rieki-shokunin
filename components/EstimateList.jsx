@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   getEstimateDisplayTotals,
   getProfitRateColorBand,
@@ -8,7 +9,7 @@ import {
 import PaymentControls from "./PaymentControls";
 import PaymentStatusBadge from "./PaymentStatusBadge";
 import DocumentSendButtons from "./DocumentSendButtons";
-import SafeButton from "./SafeButton";
+import BackLink from "./BackLink";
 import { s } from "../lib/styles";
 import UsageCard from "./UsageCard";
 
@@ -16,9 +17,6 @@ export default function EstimateList({
   estimates,
   plan,
   clientCount,
-  onBack,
-  onEdit,
-  onCopy,
   onGeneratePdf,
   isPdfGenerating,
   onPdfBlocked,
@@ -28,7 +26,7 @@ export default function EstimateList({
 }) {
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <BackLink href="/dashboard" />
       <h1 style={s.title}>保存済み見積</h1>
       <p style={s.sub}>見積中 → 送付済 → 請求済 → 入金待ち → 入金済</p>
 
@@ -85,12 +83,18 @@ export default function EstimateList({
               />
 
               <div style={s.rowActions}>
-                <SafeButton style={s.copyBtn} onPress={() => onCopy(e.id)}>
+                <Link
+                  href={`/estimate/copy/${e.id}`}
+                  style={{ ...s.copyBtn, textDecoration: "none", display: "inline-block", textAlign: "center" }}
+                >
                   📋 コピー
-                </SafeButton>
-                <SafeButton style={s.editBtn} onPress={() => onEdit(e.id)}>
+                </Link>
+                <Link
+                  href={`/estimate/${e.id}`}
+                  style={{ ...s.editBtn, textDecoration: "none", display: "inline-block", textAlign: "center" }}
+                >
                   編集
-                </SafeButton>
+                </Link>
               </div>
             </section>
           );

@@ -3,9 +3,17 @@
 import { buildCeoDashboard } from "../utils/ceoDashboard";
 import { yen } from "../utils/calcProfit";
 import { getPlanShortLabel } from "../lib/plan";
+import Link from "next/link";
 import CeoCommentCard from "./CeoCommentCard";
 import QuickEstimatePanel from "./QuickEstimatePanel";
 import { s } from "../lib/styles";
+
+const navLinkStyle = (baseStyle) => ({
+  ...baseStyle,
+  textDecoration: "none",
+  display: "block",
+  boxSizing: "border-box",
+});
 
 function SectionDivider() {
   return <hr style={s.homeDivider} />;
@@ -33,8 +41,6 @@ export default function Dashboard({
   company,
   siteMasters,
   quickEstimateUsage,
-  onQuickEstimate,
-  setScreen,
 }) {
   const dashboard = buildCeoDashboard(estimates, {
     monthlyTargetProfit: company?.monthlyTargetProfit,
@@ -141,41 +147,23 @@ export default function Dashboard({
 
       <SectionDivider />
 
-      <QuickEstimatePanel
-        siteMasters={siteMasters}
-        usage={quickEstimateUsage}
-        onQuickEstimate={onQuickEstimate}
-      />
+      <QuickEstimatePanel siteMasters={siteMasters} usage={quickEstimateUsage} />
 
       <SectionDivider />
 
       <nav style={s.ceoNav}>
-        <button
-          type="button"
-          style={s.btnPrimary}
-          onClick={() => {
-            console.log("CLICK");
-            setScreen("new");
-            alert("CLICK");
-          }}
-        >
-          見積作成
-        </button>
-        <button type="button" style={s.btn} onClick={() => setScreen("siteMasters")}>
-          現場マスター
-        </button>
-        <button type="button" style={s.btn} onClick={() => setScreen("list")}>
+        <Link href="/estimate" style={navLinkStyle(s.btnPrimary)}>
+          ＋ 見積作成
+        </Link>
+        <Link href="/list" style={navLinkStyle(s.btn)}>
           保存済み見積
-        </button>
-        <button type="button" style={s.btn} onClick={() => setScreen("partners")}>
+        </Link>
+        <Link href="/partners" style={navLinkStyle(s.btn)}>
           取引先管理
-        </button>
-        <button type="button" style={s.btn} onClick={() => setScreen("settings")}>
+        </Link>
+        <Link href="/settings" style={navLinkStyle(s.btn)}>
           会社設定
-        </button>
-        <button type="button" style={s.btn} onClick={() => setScreen("pricing")}>
-          料金プラン
-        </button>
+        </Link>
       </nav>
     </>
   );

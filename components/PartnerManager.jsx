@@ -22,6 +22,7 @@ import { getOutsourcingModeLabel, yen } from "../utils/calcProfit";
 import { s } from "../lib/styles";
 import ConfirmModal from "./ConfirmModal";
 import SafeButton from "./SafeButton";
+import BackLink from "./BackLink";
 import UsageCard from "./UsageCard";
 import { Collapsible, Input, Select } from "./FormFields";
 
@@ -155,7 +156,7 @@ function validatePartnerForm(form) {
   return name;
 }
 
-export default function PartnerManager({ partners, plan, onBack, onSave, estimateCount = 0 }) {
+export default function PartnerManager({ partners, plan, onSave, estimateCount = 0 }) {
   const [form, setForm] = useState(emptyPartnerForm());
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(emptyPartnerForm());
@@ -227,9 +228,7 @@ export default function PartnerManager({ partners, plan, onBack, onSave, estimat
 
   return (
     <main style={s.page}>
-      <SafeButton style={s.back} onPress={onBack}>
-        ← 戻る
-      </SafeButton>
+      <BackLink href="/dashboard" />
       <h1 style={s.title}>取引先管理</h1>
       <p style={s.muted}>
         会社情報・請求情報・単価情報をまとめて管理します。見積・請求・送信で利用されます。

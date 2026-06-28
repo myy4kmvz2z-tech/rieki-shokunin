@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ja">
       <body>
-        <div id="__next" className="app-root">
+        <div id="__next" className="app-root app-shell no-print">
           {children}
         </div>
       </body>

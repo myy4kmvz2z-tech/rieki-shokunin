@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { buildQuickEstimateSections, getQuickWorkTypeLabel } from "../utils/quickEstimate";
-import SafeButton from "./SafeButton";
 import { s } from "../lib/styles";
 
-export default function QuickEstimatePanel({ siteMasters, usage, onQuickEstimate }) {
+export default function QuickEstimatePanel({ siteMasters, usage }) {
   const sections = buildQuickEstimateSections(siteMasters, usage);
 
   if (sections.length === 0) {
@@ -25,14 +25,13 @@ export default function QuickEstimatePanel({ siteMasters, usage, onQuickEstimate
             <p style={s.quickEstimateClient}>🏠 {client}</p>
             <div style={s.quickEstimateItems}>
               {items.map((item) => (
-                <SafeButton
+                <Link
                   key={`${item.client}-${item.workType}`}
-                  type="button"
-                  style={s.quickEstimateBtn}
-                  onPress={() => onQuickEstimate(item.client, item.workType)}
+                  href={`/estimate?client=${encodeURIComponent(item.client)}&workType=${encodeURIComponent(item.workType)}`}
+                  style={{ ...s.quickEstimateBtn, textDecoration: "none", display: "block" }}
                 >
                   {getQuickWorkTypeLabel(item.workType)}
-                </SafeButton>
+                </Link>
               ))}
             </div>
           </div>

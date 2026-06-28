@@ -32,7 +32,7 @@ import { getEstimateSyncFromSiteMaster } from "../utils/siteMaster";
 import { getQuickWorkTypeLabel } from "../utils/quickEstimate";
 import SiteTransportSection from "./SiteTransportSection";
 import DocumentSendButtons from "./DocumentSendButtons";
-import SafeButton from "./SafeButton";
+import BackLink from "./BackLink";
 import { s } from "../lib/styles";
 import { CardButtonGroup, Collapsible, Input, Select } from "./FormFields";
 
@@ -310,7 +310,7 @@ export default function EstimateForm({
   siteMasters = [],
   company,
   plan,
-  onBack,
+  backHref = "/dashboard",
   onSave,
   onGeneratePdf,
   isPdfGenerating = false,
@@ -585,7 +585,7 @@ export default function EstimateForm({
   if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
-        <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
+        <BackLink href={backHref} />
         <h1 style={s.estimatePageTitle}>見積作成</h1>
         <p style={s.muted}>取引先が未登録です。</p>
       </main>
@@ -602,7 +602,7 @@ export default function EstimateForm({
 
   return (
     <main style={s.estimatePage}>
-      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
+      <BackLink href={backHref} />
       <h1 style={s.estimatePageTitle}>
         {isQuickEstimate
           ? "ワンタップ見積"
