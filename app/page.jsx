@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PartnerManager from "../components/PartnerManager";
 import CompanySettings from "../components/CompanySettings";
 import ConfirmModal from "../components/ConfirmModal";
@@ -31,25 +32,15 @@ import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
 import { usePdfExport } from "../hooks/usePdfExport";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
-function readScreenFromUrl() {
+function readScreenFromSearch() {
   if (typeof window === "undefined") return "home";
   const params = new URLSearchParams(window.location.search);
   return params.get("screen") || "home";
 }
 
-function writeScreenToUrl(nextScreen) {
-  if (typeof window === "undefined") return;
-  const url = new URL(window.location.href);
-  if (!nextScreen || nextScreen === "home") {
-    url.searchParams.delete("screen");
-  } else {
-    url.searchParams.set("screen", nextScreen);
-  }
-  const search = url.searchParams.toString();
-  window.history.replaceState(null, "", search ? `${url.pathname}?${search}` : url.pathname);
-}
-
-export default function Page() {
+function PageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [screen, setScreenState] = useState("home");
   const [debugText] = useState("IPHONE FIX 3000");
   const { estimates, saveAll } = useEstimates();
@@ -67,14 +58,26 @@ export default function Page() {
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
   const pdfExport = usePdfExport(company);
 
-  const setScreen = useCallback((next) => {
-    setScreenState(next);
-    writeScreenToUrl(next);
+  const setScreen = useCallback(
+    (next) => {
+      const value = !next || next === "home" ? "home" : next;
+      setScreenState(value);
+      if (value === "home") {
+        router.replace("/");
+        return;
+      }
+      router.replace(`/?screen=${encodeURIComponent(value)}`);
+    },
+    [router]
+  );
+
+  useEffect(() => {
+    setScreenState(readScreenFromSearch());
   }, []);
 
   useEffect(() => {
-    setScreenState(readScreenFromUrl());
-  }, []);
+    setScreenState(searchParams.get("screen") || "home");
+  }, [searchParams]);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -427,5 +430,13 @@ export default function Page() {
         </div>
       )}
     </>
+  );
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={null}>
+      <PageContent />
+    </Suspense>
   );
 }
