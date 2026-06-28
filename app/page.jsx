@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import PartnerManager from "../components/PartnerManager";
 import CompanySettings from "../components/CompanySettings";
 import ConfirmModal from "../components/ConfirmModal";
@@ -32,16 +31,8 @@ import { siteMasterToQuickEstimateInitial } from "../utils/quickEstimate";
 import { usePdfExport } from "../hooks/usePdfExport";
 import { EstimatePaper, InvoicePaper } from "../utils/pdf";
 
-function readScreenFromSearch() {
-  if (typeof window === "undefined") return "home";
-  const params = new URLSearchParams(window.location.search);
-  return params.get("screen") || "home";
-}
-
-function PageContent() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [screen, setScreenState] = useState("home");
+export default function Page() {
+  const [screen, setScreen] = useState("home");
   const [debugText] = useState("IPHONE FIX 3000");
   const { estimates, saveAll } = useEstimates();
   const { partners, savePartners } = usePartners();
@@ -57,27 +48,6 @@ function PageContent() {
   const [showEstimateLimitModal, setShowEstimateLimitModal] = useState(false);
   const [showPdfUpgradeModal, setShowPdfUpgradeModal] = useState(false);
   const pdfExport = usePdfExport(company);
-
-  const setScreen = useCallback(
-    (next) => {
-      const value = !next || next === "home" ? "home" : next;
-      setScreenState(value);
-      if (value === "home") {
-        router.replace("/");
-        return;
-      }
-      router.replace(`/?screen=${encodeURIComponent(value)}`);
-    },
-    [router]
-  );
-
-  useEffect(() => {
-    setScreenState(readScreenFromSearch());
-  }, []);
-
-  useEffect(() => {
-    setScreenState(searchParams.get("screen") || "home");
-  }, [searchParams]);
 
   useEffect(() => {
     const clearPrint = () => {
@@ -389,6 +359,7 @@ function PageContent() {
           siteMasters={siteMasters}
           quickEstimateUsage={quickEstimateUsage}
           onQuickEstimate={handleQuickEstimate}
+          setScreen={setScreen}
         />
       </main>
     );
@@ -430,13 +401,5 @@ function PageContent() {
         </div>
       )}
     </>
-  );
-}
-
-export default function Page() {
-  return (
-    <Suspense fallback={null}>
-      <PageContent />
-    </Suspense>
   );
 }

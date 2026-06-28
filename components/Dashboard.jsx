@@ -7,13 +7,6 @@ import CeoCommentCard from "./CeoCommentCard";
 import QuickEstimatePanel from "./QuickEstimatePanel";
 import { s } from "../lib/styles";
 
-const navLinkStyle = (baseStyle) => ({
-  ...baseStyle,
-  textDecoration: "none",
-  display: "block",
-  boxSizing: "border-box",
-});
-
 function SectionDivider() {
   return <hr style={s.homeDivider} />;
 }
@@ -41,6 +34,7 @@ export default function Dashboard({
   siteMasters,
   quickEstimateUsage,
   onQuickEstimate,
+  setScreen,
 }) {
   const dashboard = buildCeoDashboard(estimates, {
     monthlyTargetProfit: company?.monthlyTargetProfit,
@@ -156,24 +150,32 @@ export default function Dashboard({
       <SectionDivider />
 
       <nav style={s.ceoNav}>
-        <a href="/?screen=new" style={navLinkStyle(s.btnPrimary)}>
-          ＋ 見積作成
-        </a>
-        <a href="/?screen=siteMasters" style={navLinkStyle(s.btn)}>
+        <button
+          type="button"
+          style={s.btnPrimary}
+          onClick={() => {
+            console.log("CLICK");
+            setScreen("new");
+            alert("CLICK");
+          }}
+        >
+          見積作成
+        </button>
+        <button type="button" style={s.btn} onClick={() => setScreen("siteMasters")}>
           現場マスター
-        </a>
-        <a href="/?screen=list" style={navLinkStyle(s.btn)}>
+        </button>
+        <button type="button" style={s.btn} onClick={() => setScreen("list")}>
           保存済み見積
-        </a>
-        <a href="/?screen=partners" style={navLinkStyle(s.btn)}>
+        </button>
+        <button type="button" style={s.btn} onClick={() => setScreen("partners")}>
           取引先管理
-        </a>
-        <a href="/?screen=settings" style={navLinkStyle(s.btn)}>
+        </button>
+        <button type="button" style={s.btn} onClick={() => setScreen("settings")}>
           会社設定
-        </a>
-        <a href="/?screen=pricing" style={navLinkStyle(s.btn)}>
+        </button>
+        <button type="button" style={s.btn} onClick={() => setScreen("pricing")}>
           料金プラン
-        </a>
+        </button>
       </nav>
     </>
   );

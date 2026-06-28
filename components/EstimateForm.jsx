@@ -585,7 +585,7 @@ export default function EstimateForm({
   if (partnerOptions.length === 0) {
     return (
       <main style={s.estimatePage}>
-        <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+        <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
         <h1 style={s.estimatePageTitle}>見積作成</h1>
         <p style={s.muted}>取引先が未登録です。</p>
       </main>
@@ -602,7 +602,7 @@ export default function EstimateForm({
 
   return (
     <main style={s.estimatePage}>
-      <SafeButton style={s.back} onPress={onBack}>← 戻る</SafeButton>
+      <button type="button" style={s.back} onClick={onBack}>← 戻る</button>
       <h1 style={s.estimatePageTitle}>
         {isQuickEstimate
           ? "ワンタップ見積"
